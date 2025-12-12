@@ -2,23 +2,31 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 import json
 
-from app.schemas.metric import StructuredLLMResponse, MetricDefinitionCreate, MetricType, ScaleType, TargetDirection
+from app.models.metric import MetricDefinition, MetricType, ScaleType, TargetDirection, MetricDesignIteration
 from app.models.test_case import TestCase
+from app.schemas.metric import MetricDefinitionCreate, StructuredLLMResponse
+from app.schemas.llm_validation import JudgeResult
 from app.core.config import settings
 
 class LLMProvider(ABC):
     @abstractmethod
-    def generate_metric_proposals(self, user_intent: str, test_case: TestCase) -> StructuredLLMResponse:
+    def generate_metric_proposals(self, intent: str, test_case: TestCase) -> StructuredLLMResponse:
         pass
 
     @abstractmethod
     def generate_report_narrative(self, context_data: Any) -> str:
         pass
 
+    @abstractmethod
+    def judge_metric(self, metric: MetricDefinition, candidate_text: str, test_case_context: str) -> JudgeResult:
+        pass
+
 class StubLLMProvider(LLMProvider):
-    def generate_metric_proposals(self, user_intent: str, test_case: TestCase) -> StructuredLLMResponse:
-        # Deterministic stub logic (moved from service)
+    def generate_metric_proposals(self, intent: str, test_case: TestCase) -> StructuredLLMResponse:
+        # Deterministic stub returning 5 metrics
         return StructuredLLMResponse(
+            reasoning_summary="Stable deterministic reasoning.",
+            gap_analysis="No gaps found in stub mode.",
             proposed_metrics=[
                 MetricDefinitionCreate(
                     name="Style similarity",
@@ -42,35 +50,50 @@ class StubLLMProvider(LLMProvider):
                 ),
                 MetricDefinitionCreate(
                     name="Policy violations count",
-                    description="Counts occurrences of forbidden words.",
+                    description="Counts the number of policy violations in the response.",
+                    metric_type=MetricType.LLM_JUDGE,
+                    scale_type=ScaleType.UNBOUNDED,
+                    target_direction=TargetDirection.LOWER_IS_BETTER,
+                    evaluation_prompt="Count violations."
+                ),
+                MetricDefinitionCreate(
+                    name="Response latency",
+                    description="Measures the time taken to generate the response.",
                     metric_type=MetricType.DETERMINISTIC,
                     scale_type=ScaleType.UNBOUNDED,
                     target_direction=TargetDirection.LOWER_IS_BETTER,
-                    rule_definition="Count violations of forbidden words."
+                    rule_definition="Measure time."
+                ),
+                MetricDefinitionCreate(
+                    name="Token count",
+                    description="Counts the total number of tokens in the response.",
+                    metric_type=MetricType.DETERMINISTIC,
+                    scale_type=ScaleType.UNBOUNDED,
+                    target_direction=TargetDirection.LOWER_IS_BETTER,
+                    rule_definition="Count tokens."
                 )
-            ],
-            gap_analysis=f"Analyzed intent: '{user_intent}'. Proposals cover style, adherence, and safety."
+            ]
         )
 
     def generate_report_narrative(self, content: Any) -> str:
-        # Deterministic stub logic (moved from service helper)
-        if content.aggregated_score_direction == "improved":
-            summary = f"Overall quality improved (delta: {content.aggregated_score_delta:.2f})."
-        elif content.aggregated_score_direction == "worsened":
-            summary = f"Overall quality worsened (delta: {content.aggregated_score_delta:.2f})."
-        else:
-            summary = "Overall quality remained stable."
-            
-        for metric in content.metric_comparison:
-            if abs(metric.delta) > 0:
-                summary += f" {metric.metric_name} {metric.direction} by {abs(metric.delta):.2f} points."
-        return summary
+        return "Deterministic narrative based on stub data."
+        
+    def judge_metric(self, metric: MetricDefinition, candidate_text: str, test_case_context: str) -> JudgeResult:
+        # Deterministic scoring based on hash of text
+        score = float(len(candidate_text) % 100)
+        return JudgeResult(
+            score=score,
+            explanation=f"Stub judged based on length ({len(candidate_text)} chars)."
+        )
 
 class OpenAILLMProvider(LLMProvider):
     def __init__(self):
+        # Fail fast if key missing
+        if not settings.OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY is required for OpenAILLMProvider")
         try:
              from openai import OpenAI
-             self.client = OpenAI(api_key=settings.OPENAI_API_KEY.get_secret_value() if settings.OPENAI_API_KEY else None)
+             self.client = OpenAI(api_key=settings.OPENAI_API_KEY.get_secret_value())
              self.model = settings.OPENAI_MODEL
         except ImportError:
             raise ImportError("openai package is required for OpenAILLMProvider")
@@ -122,7 +145,30 @@ Examples: {[e.content for e in test_case.examples]}"""
         # event = response.output_parsed
         return response.output_parsed
 
-    def generate_report_narrative(self, context_data: Any) -> str:
+    def judge_metric(self, metric: MetricDefinition, candidate_text: str, test_case_context: str) -> JudgeResult:
+        system_prompt = f"""You are an AI Judge evaluating an LLM response.
+        
+Metric Name: {metric.name}
+Metric Description: {metric.description}
+Evaluation Prompt: {metric.evaluation_prompt}
+
+Context:
+{test_case_context}
+
+Constraint:
+Output must be in JSON format with 'score' (float) and 'explanation' (short English text).
+"""
+        user_content = f"Evaluate this Text:\n---\n{candidate_text}\n---"
+
+        response = self.client.responses.parse(
+            model=self.model,
+            input=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ],
+            text_format=JudgeResult
+        )
+        return response.output_parsed
         # context_data is ReportContent pydantic model
         system_prompt = """You are a Data Analyst writing a business summary for an LLM evaluation report.
 Analyze the provided metric deltas and aggregated score changes.

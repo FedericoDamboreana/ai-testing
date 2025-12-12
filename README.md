@@ -18,6 +18,29 @@ Internal single-user evaluation tool for LLM-based systems.
    ```bash
    cp .env.example .env
    ```
+## LLM Integration
+
+The tool supports two modes: `stub` (default) and `openai`.
+
+### Configuration
+Create a `.env` file:
+```env
+LLM_MODE=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o
+```
+
+### LLM Judge
+When `LLM_MODE=openai`, metrics of type `LLM_JUDGE` are evaluated by the model.
+- The system prompt includes the metric definition, context, and evaluation criteria.
+- It produces a strict JSON output with a `score` and `explanation`.
+- **Fallback**: If the OpenAI API fails, the system automatically falls back to the deterministic stub and adds a warning to the result details.
+
+### Metric Design & Reporting
+- **Design**: OpenAI proposes metrics based on User Intent.
+- **Reporting**: OpenAI generates a natural language summary of test results.
+
+## Reporting
    **Modes**:
    - `LLM_MODE=stub` (Default): Uses deterministic responses for testing/dev (No API key needed).
    - `LLM_MODE=openai`: Uses OpenAI API for real metric design and narratives. Requires `OPENAI_API_KEY`.

@@ -1,6 +1,9 @@
 from typing import List, Optional, Dict, Any
+from app.models.evaluation import EvaluationRun, MetricResult
+from app.models.metric import MetricDefinition, MetricType, ScaleType
 from app.models.test_case import TestCase
-from app.models.metric import MetricDefinition, MetricType, ScaleType, TargetDirection
+from app.services.llm import get_llm_provider
+from app.providers.llm import StubLLMProvider
 from app.schemas.evaluation import EvaluationRunPreviewResponse
 
 def evaluate_test_case(test_case: TestCase, metrics: List[MetricDefinition], outputs: List[str]) -> EvaluationRunPreviewResponse:
