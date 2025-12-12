@@ -1,24 +1,26 @@
 import { useState, useEffect } from 'react'
-import { Link, Route, Switch } from 'wouter'
-import ProjectDashboard from './ProjectDashboard'
-import TestCaseDashboard from './TestCaseDashboard'
-import './App.css'
+import { Switch, Route, Redirect } from 'wouter'
+import ProjectsList from './ProjectsList'
+import NewProject from './NewProject'
+import ProjectDetail from './ProjectDetail'
+import NewTestCase from './NewTestCase'
+import TestCaseDetail from './TestCaseDetail'
 
 function App() {
     return (
-        <div className="container">
-            <nav>
-                <Link href="/">Home</Link>
-            </nav>
-            <main>
-                <Switch>
-                    <Route path="/" component={ProjectDashboard} />
-                    <Route path="/project/:id" component={ProjectDashboard} />
-                    <Route path="/testcase/:id" component={TestCaseDashboard} />
-                    <Route>404 Not Found</Route>
-                </Switch>
-            </main>
-        </div>
+        <Switch>
+            <Route path="/" component={ProjectsList} />
+            <Route path="/projects/new" component={NewProject} />
+            <Route path="/projects/:id" component={ProjectDetail} />
+            <Route path="/projects/:id/testcases/new" component={NewTestCase} />
+            <Route path="/testcases/:id" component={TestCaseDetail} />
+            <Route path="/settings">
+                {/* Placeholder */}
+                <div className="p-8 text-white">Settings Page (Coming Soon)</div>
+            </Route>
+            {/* Fallback */}
+            <Route><Redirect to="/" /></Route>
+        </Switch>
     )
 }
 

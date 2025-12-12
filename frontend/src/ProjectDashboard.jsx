@@ -9,7 +9,12 @@ export default function ProjectDashboard({ params }) {
 
     useEffect(() => {
         fetch(`http://localhost:8000/api/v1/projects/${projectId}/dashboard`)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`)
+                }
+                return res.json()
+            })
             .then(data => {
                 setData(data)
                 setLoading(false)
@@ -17,11 +22,18 @@ export default function ProjectDashboard({ params }) {
             .catch(err => {
                 console.error(err)
                 setLoading(false)
+                setData(null) // Ensure data is null on error
             })
     }, [projectId])
 
     if (loading) return <div>Loading...</div>
-    if (!data) return <div>Error loading project or Project Not Found (Ensure ID {projectId} exists)</div>
+    if (!data) return (
+        <div style={{ padding: '20px', color: 'red' }}>
+            <h2>Project Not Found</h2>
+            <p>Could not load project ID: {projectId}.</p>
+            <p>Make sure the database is seeded.</p>
+        </div>
+    )
 
     return (
         <div className="dashboard">
