@@ -73,7 +73,7 @@ export default function NewTestCase() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium shadow-sm transition-colors disabled:opacity-50"
+                            className="bg-[#002B5C] hover:bg-[#001f42] text-white px-6 py-2 rounded-md font-medium shadow-sm transition-colors disabled:opacity-50"
                         >
                             {loading ? "Creating..." : "Create Test Case"}
                         </button>

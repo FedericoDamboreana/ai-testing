@@ -101,14 +101,14 @@ export default function TestCaseDetail() {
     return (
         <Layout title={testCase.name}>
             <div className="flex flex-col h-full">
-                <div className="flex border-b border-gray-700 mb-6">
+                <div className="flex border-b border-gray-200 mb-6">
                     {['examples', 'metrics', 'evaluate', 'dashboard'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`px-6 py-3 capitalize font-medium transition-colors ${activeTab === tab
-                                    ? 'text-blue-400 border-b-2 border-blue-400'
-                                    : 'text-gray-400 hover:text-white'
+                                ? 'text-[#002B5C] border-b-2 border-[#002B5C]'
+                                : 'text-gray-500 hover:text-[#002B5C]'
                                 }`}
                         >
                             {tab}
@@ -120,14 +120,14 @@ export default function TestCaseDetail() {
                     {/* EXAMPLES TAB */}
                     {activeTab === 'examples' && (
                         <div className="max-w-3xl space-y-6">
-                            <div className="bg-gray-800 p-6 rounded border border-gray-700">
-                                <h3 className="text-lg font-medium text-white mb-4">Golden Examples</h3>
-                                <p className="text-gray-400 mb-4">Define examples of good/bad behavior to guide the metric design.</p>
+                            <div className="bg-white p-6 rounded shadow-sm border border-gray-100">
+                                <h3 className="text-lg font-medium text-[#002B5C] mb-4">Golden Examples</h3>
+                                <p className="text-gray-500 mb-4">Define examples of good/bad behavior to guide the metric design.</p>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <textarea className="bg-gray-900 border border-gray-600 rounded p-3 text-white h-32" placeholder="Input (User Prompt)"></textarea>
-                                    <textarea className="bg-gray-900 border border-gray-600 rounded p-3 text-white h-32" placeholder="Ideal Output (Baseline)"></textarea>
+                                    <textarea className="bg-gray-50 border border-gray-200 rounded p-3 text-gray-900 h-32 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Input (User Prompt)"></textarea>
+                                    <textarea className="bg-gray-50 border border-gray-200 rounded p-3 text-gray-900 h-32 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ideal Output (Baseline)"></textarea>
                                 </div>
-                                <button className="mt-4 bg-gray-700 text-white px-4 py-2 rounded">Save Example (Stub)</button>
+                                <button className="mt-4 bg-gray-100 text-gray-600 px-4 py-2 rounded hover:bg-gray-200">Save Example (Stub)</button>
                             </div>
                         </div>
                     )}
@@ -135,46 +135,46 @@ export default function TestCaseDetail() {
                     {/* METRICS TAB */}
                     {activeTab === 'metrics' && (
                         <div className="max-w-3xl space-y-6">
-                            <div className="bg-gray-800 p-6 rounded border border-gray-700">
-                                <h3 className="text-lg font-medium text-white mb-4">Metric Design</h3>
-                                <label className="block text-sm text-gray-400 mb-2">What do you want to measure?</label>
+                            <div className="bg-white p-6 rounded shadow-sm border border-gray-100">
+                                <h3 className="text-lg font-medium text-[#002B5C] mb-4">Metric Design</h3>
+                                <label className="block text-sm text-gray-500 mb-2">What do you want to measure?</label>
                                 <textarea
                                     value={userIntent}
                                     onChange={e => setUserIntent(e.target.value)}
-                                    className="w-full bg-gray-900 border border-gray-600 rounded p-3 text-white h-24 mb-4"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded p-3 text-gray-900 h-24 mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                     placeholder="e.g. Ensure the bot is polite and never gives financial advice."
                                 ></textarea>
                                 <button
                                     onClick={generateMetrics}
                                     disabled={designLoading}
-                                    className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded shadow transition-colors"
+                                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded shadow-sm transition-colors"
                                 >
                                     {designLoading ? "Generating..." : "Generate Metrics"}
                                 </button>
                             </div>
 
                             {metricProposal && (
-                                <div className="bg-gray-800 p-6 rounded border border-gray-700 animate-fade-in">
-                                    <h4 className="text-white font-medium mb-4">Proposed Metrics</h4>
+                                <div className="bg-white p-6 rounded shadow-sm border border-gray-100 animate-fade-in">
+                                    <h4 className="text-[#002B5C] font-medium mb-4">Proposed Metrics</h4>
                                     <div className="space-y-4 mb-6">
                                         {JSON.parse(metricProposal.llm_proposed_metrics).map((m, i) => (
-                                            <div key={i} className="bg-gray-900 p-4 rounded border border-gray-600">
+                                            <div key={i} className="bg-gray-50 p-4 rounded border border-gray-200">
                                                 <div className="flex justify-between">
-                                                    <span className="font-bold text-blue-400">{m.name}</span>
-                                                    <span className="text-xs bg-gray-700 px-2 py-1 rounded text-white">{m.metric_type}</span>
+                                                    <span className="font-bold text-[#002B5C]">{m.name}</span>
+                                                    <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700">{m.metric_type}</span>
                                                 </div>
-                                                <p className="text-gray-300 text-sm mt-1">{m.description}</p>
+                                                <p className="text-gray-600 text-sm mt-1">{m.description}</p>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="bg-blue-900/30 p-4 rounded border border-blue-800 mb-6">
-                                        <h5 className="text-blue-200 text-sm font-bold mb-1">Gap Analysis</h5>
-                                        <p className="text-blue-100 text-sm">{metricProposal.gap_analysis}</p>
+                                    <div className="bg-blue-50 p-4 rounded border border-blue-100 mb-6">
+                                        <h5 className="text-blue-800 text-sm font-bold mb-1">Gap Analysis</h5>
+                                        <p className="text-blue-700 text-sm">{metricProposal.gap_analysis}</p>
                                     </div>
                                     <button
                                         onClick={confirmMetrics}
                                         disabled={designLoading}
-                                        className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded font-medium"
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded font-medium shadow-sm"
                                     >
                                         Confirm Metrics
                                     </button>
@@ -187,12 +187,12 @@ export default function TestCaseDetail() {
                     {activeTab === 'evaluate' && (
                         <div className="grid grid-cols-2 gap-8 h-full">
                             <div className="flex flex-col gap-4">
-                                <div className="bg-gray-800 p-4 rounded border border-gray-700 flex-1 flex flex-col">
-                                    <h3 className="text-white font-medium mb-3">Input Output</h3>
+                                <div className="bg-white p-4 rounded shadow-sm border border-gray-100 flex-1 flex flex-col">
+                                    <h3 className="text-[#002B5C] font-medium mb-3">Input Output</h3>
                                     <textarea
                                         value={evalOutput}
                                         onChange={e => setEvalOutput(e.target.value)}
-                                        className="flex-1 w-full bg-gray-900 border border-gray-600 rounded p-3 text-white resize-none font-mono"
+                                        className="flex-1 w-full bg-gray-50 border border-gray-200 rounded p-3 text-gray-900 resize-none font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                         placeholder="Paste the LLM output you want to evaluate here..."
                                     ></textarea>
                                 </div>
@@ -200,44 +200,44 @@ export default function TestCaseDetail() {
                                     <button
                                         onClick={runPreview}
                                         disabled={evalLoading}
-                                        className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded"
+                                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded border border-gray-300 font-medium"
                                     >
                                         Preview Score
                                     </button>
                                     <button
                                         onClick={commitEval}
                                         disabled={!previewResult || evalLoading}
-                                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 bg-[#002B5C] hover:bg-[#001f42] text-white py-3 rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                                     >
                                         Commit & Save
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="bg-gray-900 p-6 rounded border border-gray-800 overflow-auto">
-                                <h3 className="text-gray-400 uppercase text-xs font-bold tracking-wider mb-4">Results Preview</h3>
+                            <div className="bg-white p-6 rounded shadow-sm border border-gray-100 overflow-auto">
+                                <h3 className="text-gray-500 uppercase text-xs font-bold tracking-wider mb-4">Results Preview</h3>
                                 {previewResult ? (
                                     <div className="space-y-6">
                                         <div className="text-center">
-                                            <div className="text-5xl font-bold text-white mb-2">{previewResult.aggregated_score.toFixed(1)}</div>
+                                            <div className="text-5xl font-bold text-[#002B5C] mb-2">{previewResult.aggregated_score.toFixed(1)}</div>
                                             <div className="text-gray-500">Aggregated Score</div>
                                         </div>
                                         <div className="space-y-3">
                                             {previewResult.metric_results.map((res, i) => (
-                                                <div key={i} className="bg-gray-800 p-4 rounded border border-gray-700">
+                                                <div key={i} className="bg-gray-50 p-4 rounded border border-gray-200">
                                                     <div className="flex justify-between items-start mb-2">
-                                                        <span className="text-white font-medium">{res.metric_name}</span>
-                                                        <span className={`font-mono font-bold ${res.score >= 50 ? 'text-green-400' : 'text-red-400'}`}>
+                                                        <span className="text-gray-900 font-medium">{res.metric_name}</span>
+                                                        <span className={`font-mono font-bold ${res.score >= 50 ? 'text-green-600' : 'text-red-600'}`}>
                                                             {res.score}
                                                         </span>
                                                     </div>
-                                                    <p className="text-gray-300 text-sm">{res.explanation}</p>
+                                                    <p className="text-gray-600 text-sm">{res.explanation}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center justify-center h-full text-gray-600">
+                                    <div className="flex items-center justify-center h-full text-gray-400">
                                         Run a preview to see results
                                     </div>
                                 )}
@@ -248,30 +248,30 @@ export default function TestCaseDetail() {
                     {/* DASHBOARD TAB */}
                     {activeTab === 'dashboard' && dashData && (
                         <div className="space-y-8 pb-10">
-                            <div className="h-64 bg-gray-800 p-4 rounded border border-gray-700">
-                                <h4 className="text-white mb-4">Score Evolution</h4>
+                            <div className="h-64 bg-white p-4 rounded shadow-sm border border-gray-100">
+                                <h4 className="text-[#002B5C] mb-4 font-semibold">Score Evolution</h4>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={dashData.aggregated_score_points}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                        <XAxis dataKey="version_number" stroke="#9CA3AF" />
-                                        <YAxis domain={[0, 100]} stroke="#9CA3AF" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                        <Line type="monotone" dataKey="score" stroke="#60A5FA" strokeWidth={2} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                        <XAxis dataKey="version_number" stroke="#6b7280" />
+                                        <YAxis domain={[0, 100]} stroke="#6b7280" />
+                                        <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', color: '#000' }} />
+                                        <Line type="monotone" dataKey="score" stroke="#2563EB" strokeWidth={2} />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 {dashData.metrics.map(m => (
-                                    <div key={m.metric_definition_id} className="h-48 bg-gray-800 p-4 rounded border border-gray-700">
-                                        <h5 className="text-gray-300 mb-2">{m.metric_name}</h5>
+                                    <div key={m.metric_definition_id} className="h-48 bg-white p-4 rounded shadow-sm border border-gray-100">
+                                        <h5 className="text-gray-600 mb-2 text-sm font-medium">{m.metric_name}</h5>
                                         <ResponsiveContainer width="100%" height="80%">
                                             <LineChart data={m.points}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                                                 <XAxis dataKey="version_number" hide />
                                                 <YAxis domain={[0, 100]} hide />
-                                                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                                <Line type="monotone" dataKey="score" stroke="#34D399" dot={false} strokeWidth={2} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', color: '#000' }} />
+                                                <Line type="monotone" dataKey="score" stroke="#10B981" dot={false} strokeWidth={2} />
                                             </LineChart>
                                         </ResponsiveContainer>
                                     </div>

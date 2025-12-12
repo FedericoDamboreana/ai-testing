@@ -34,41 +34,41 @@ export default function ProjectDetail() {
             <div className="max-w-5xl mx-auto space-y-8">
 
                 {/* Project Header */}
-                <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
-                    <h3 className="text-lg font-semibold text-white mb-2">About</h3>
-                    <p className="text-gray-400">{project.description || "No description provided."}</p>
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-[#002B5C] mb-2">About</h3>
+                    <p className="text-gray-500">{project.description || "No description provided."}</p>
                 </div>
 
                 {/* Test Cases Section */}
                 <div>
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-semibold text-white">Test Cases</h3>
+                        <h3 className="text-xl font-semibold text-[#002B5C]">Test Cases</h3>
                         <Link href={`/projects/${id}/testcases/new`}>
-                            <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow transition-colors text-sm">
+                            <button className="bg-[#002B5C] hover:bg-[#001f42] text-white px-4 py-2 rounded shadow-sm transition-colors text-sm font-medium">
                                 + New Test Case
                             </button>
                         </Link>
                     </div>
 
                     {testCases.length === 0 ? (
-                        <div className="text-center py-12 bg-gray-800 rounded-lg border border-gray-700 border-dashed">
+                        <div className="text-center py-12 bg-white rounded-lg border border-gray-200 border-dashed">
                             <p className="text-gray-400 mb-4">No test cases yet.</p>
                             <Link href={`/projects/${id}/testcases/new`}>
-                                <span className="text-blue-400 hover:underline cursor-pointer">Create your first test case</span>
+                                <span className="text-[#002B5C] font-semibold hover:underline cursor-pointer">Create your first test case</span>
                             </Link>
                         </div>
                     ) : (
                         <div className="grid gap-3">
                             {testCases.map(tc => (
                                 <Link key={tc.id} href={`/testcases/${tc.id}`}>
-                                    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-blue-500 hover:bg-gray-750 cursor-pointer transition-all flex justify-between items-center group">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-100 hover:border-blue-400 hover:shadow-sm cursor-pointer transition-all flex justify-between items-center group">
                                         <div>
-                                            <div className="font-semibold text-white group-hover:text-blue-400 transition-colors">
+                                            <div className="font-semibold text-[#002B5C] group-hover:text-blue-600 transition-colors">
                                                 {tc.name}
                                             </div>
                                             <div className="text-sm text-gray-500 mt-1">{tc.description}</div>
                                         </div>
-                                        <span className="text-gray-600 group-hover:text-blue-400">→</span>
+                                        <span className="text-gray-400 group-hover:text-blue-500">→</span>
                                     </div>
                                 </Link>
                             ))}
