@@ -1,0 +1,33 @@
+[project]
+name = "llm-eval-tool"
+version = "0.4.6"
+description = "Internal single-user evaluation tool for LLM-based systems"
+authors = [{name = "Antigravity", email = "antigravity@google.com"}]
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "sqlmodel>=0.0.14",
+    "pydantic>=2.0.0",
+    "python-multipart>=0.0.9",
+    "openai>=1.0.0",
+    "pydantic-settings>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "httpx>=0.26.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "mypy>=1.8.0",
+]
+
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+python_classes = "Test* !TestCase !TestCaseBase !TestCaseCreate !TestCaseRead"
+python_functions = "test_*"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
