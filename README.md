@@ -40,7 +40,26 @@ When `LLM_MODE=openai`, metrics of type `LLM_JUDGE` are evaluated by the model.
 - **Design**: OpenAI proposes metrics based on User Intent.
 - **Reporting**: OpenAI generates a natural language summary of test results.
 
-## Reporting
+## Dashboard
+
+The project includes a React-based dashboard in the `frontend/` directory.
+
+### Running the Dashboard
+1. Ensure the backend is running:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+2. Start the frontend:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+3. Open http://localhost:5173
+
+### Features
+- **Project Overview**: View health summaries and list of test cases with latest scores.
+- **Test Case Evolution**: Visualize how metric scores and aggregated quality change over time (versions).
    **Modes**:
    - `LLM_MODE=stub` (Default): Uses deterministic responses for testing/dev (No API key needed).
    - `LLM_MODE=openai`: Uses OpenAI API for real metric design and narratives. Requires `OPENAI_API_KEY`.
