@@ -24,6 +24,7 @@ class EvaluationRunPreviewRequest(BaseModel):
 class EvaluationRunPreviewResponse(BaseModel):
     metric_results: List[dict] # Simplified list of results (definition_id, name, score, explanation)
     aggregated_score: Optional[float]
+    gap_analysis: Optional[str] = None
     warnings: List[str]
 
 class AggregatedScoreRead(BaseModel):
@@ -38,5 +39,6 @@ class EvaluationRunRead(BaseModel):
     version_number: int
     status: str
     aggregated_score: Optional[float] = None
+    gap_analysis: Optional[str] = None
     notes: Optional[str] = None
     metric_results: List[MetricResultRead] = []

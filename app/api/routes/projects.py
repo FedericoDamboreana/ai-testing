@@ -68,3 +68,17 @@ def generate_project_report_endpoint(id: int, request: ReportRequest, session: S
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/{id}", status_code=204)
+def delete_project(id: int, session: Session = Depends(get_session)):
+    project = session.get(Project, id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # We should probably cascade delete or rely on DB constraints. 
+    # For now, let's assume cascade or manually delete related items if needed.
+    # SQLModel relationships usually need explicit cascade config or DB level cascade.
+    # Given sqlite default foreign keys might be ON, let's try deletion.
+    session.delete(project)
+    session.commit()
+    return None

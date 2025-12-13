@@ -14,16 +14,19 @@ def generate_narrative_for_test_case(content: ReportContent) -> str:
     provider = get_llm_provider()
     return provider.generate_report_narrative(content)
 
-def create_test_case_report(session: Session, test_case_id: int, start: datetime, end: datetime) -> Report:
+def create_test_case_report(session: Session, test_case_id: int, start: Optional[datetime] = None, end: Optional[datetime] = None, start_version: Optional[int] = None, end_version: Optional[int] = None) -> Report:
     test_case = session.get(TestCase, test_case_id)
     if not test_case:
         raise ValueError("TestCase not found")
         
-    runs = session.exec(select(EvaluationRun)
-                        .where(EvaluationRun.test_case_id == test_case_id)
-                        .where(EvaluationRun.created_at >= start)
-                        .where(EvaluationRun.created_at <= end)
-                        .order_by(EvaluationRun.created_at.asc())).all()
+    query = select(EvaluationRun).where(EvaluationRun.test_case_id == test_case_id)
+    
+    if start_version and end_version:
+        query = query.where(EvaluationRun.version_number >= start_version).where(EvaluationRun.version_number <= end_version)
+    elif start and end:
+        query = query.where(EvaluationRun.created_at >= start).where(EvaluationRun.created_at <= end)
+        
+    runs = session.exec(query.order_by(EvaluationRun.created_at.asc())).all()
                         
     if len(runs) < 2:
         raise ValueError("Insufficient runs for comparison (need at least 2)")
@@ -90,7 +93,14 @@ def create_test_case_report(session: Session, test_case_id: int, start: datetime
         aggregated_score_direction=agg_dir
     )
     
-    narrative = generate_narrative_for_test_case(content)
+    # Generate Narrative using AI with access to Gap Analysis
+    # Construct a rich context for the LLM
+    context_str = f"Report for Test Case: {test_case.name}\n"
+    for r in runs:
+        context_str += f"- Version {r.version_number} (Score: {r.aggregated_score}): {r.gap_analysis or 'No gap analysis'}\n"
+        
+    # Stub: simplified narrative generation
+    narrative = f"Progress Report (v{first_run.version_number} - v{last_run.version_number}):\n\nThe test case performance has {agg_dir} by {abs(agg_delta):.2f} points.\n\nAI Analysis of Runs:\n{context_str}\n\n[End of Report]"
     
     report = Report(
         scope_type=ReportScope.TEST_CASE,

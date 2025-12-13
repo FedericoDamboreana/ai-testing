@@ -4,8 +4,10 @@ from pydantic import BaseModel
 from app.models.report import ReportScope
 
 class ReportRequest(BaseModel):
-    start_date: datetime
-    end_date: datetime
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    start_version: Optional[int] = None
+    end_version: Optional[int] = None
 
 class ReportContentMetricDelta(BaseModel):
     metric_name: str

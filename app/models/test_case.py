@@ -3,9 +3,16 @@ from typing import Optional, List
 from sqlmodel import Field, SQLModel, Relationship
 from app.models.project import Project
 
+from enum import Enum
+
+class ExampleType(str, Enum):
+    DESIRED = "desired"
+    CURRENT = "current"
+
 class TestCaseBase(SQLModel):
     name: str
     description: Optional[str] = None
+    user_intent: Optional[str] = None
     
 class TestCase(TestCaseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -13,12 +20,13 @@ class TestCase(TestCaseBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     project: Project = Relationship(back_populates="test_cases")
-    examples: List["Example"] = Relationship(back_populates="test_case")
-    metrics: List["MetricDefinition"] = Relationship(back_populates="test_case")
-    runs: List["EvaluationRun"] = Relationship(back_populates="test_case")
+    examples: List["Example"] = Relationship(back_populates="test_case", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    metrics: List["MetricDefinition"] = Relationship(back_populates="test_case", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    runs: List["EvaluationRun"] = Relationship(back_populates="test_case", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 class ExampleBase(SQLModel):
     content: str # Plain text only as per requirements
+    type: ExampleType = Field(default=ExampleType.CURRENT)
 
 class Example(ExampleBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

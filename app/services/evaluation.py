@@ -72,5 +72,6 @@ def evaluate_test_case(test_case: TestCase, metrics: List[MetricDefinition], out
     return EvaluationRunPreviewResponse(
         metric_results=results,
         aggregated_score=aggregated_score,
+        gap_analysis="Gap Analysis: The model's performance was evaluated based on the defined metrics. [Stub analysis placeholder]",
         warnings=warnings
     )

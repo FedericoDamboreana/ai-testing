@@ -124,10 +124,21 @@ Output rules:
 - Return a strict JSON object matching the provided schema.
 - Do not include explanations outside the JSON."""
 
+        desired_examples = [e.content for e in test_case.examples if e.type == "desired"]
+        current_examples = [e.content for e in test_case.examples if e.type == "current"]
+        
         user_content = f"""User Intent: {user_intent}
 Test Case: {test_case.name}
 Description: {test_case.description}
-Examples: {[e.content for e in test_case.examples]}"""
+
+Desired Output Examples (Target):
+{json.dumps(desired_examples, indent=2)}
+
+Current Output Examples (Baseline - flawed):
+{json.dumps(current_examples, indent=2)}
+
+Analyze the gap between Desired and Current examples given the User Intent.
+Design metrics that specifically measure this gap."""
 
         # Use Responses API as requested
         # Note: The user provided snippet uses client.responses.parse
@@ -169,6 +180,7 @@ Output must be in JSON format with 'score' (float) and 'explanation' (short Engl
             text_format=JudgeResult
         )
         return response.output_parsed
+    def generate_report_narrative(self, context_data: Any) -> str:
         # context_data is ReportContent pydantic model
         system_prompt = """You are a Data Analyst writing a business summary for an LLM evaluation report.
 Analyze the provided metric deltas and aggregated score changes.

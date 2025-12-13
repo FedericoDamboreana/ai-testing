@@ -14,9 +14,10 @@ class EvaluationRun(EvaluationRunBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     aggregated_score: Optional[float] = None
     notes: Optional[str] = None
+    gap_analysis: Optional[str] = None
     
     test_case: "TestCase" = Relationship(back_populates="runs")
-    metric_results: List["MetricResult"] = Relationship(back_populates="evaluation_run")
+    metric_results: List["MetricResult"] = Relationship(back_populates="evaluation_run", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 class MetricResultBase(SQLModel):
     score: float

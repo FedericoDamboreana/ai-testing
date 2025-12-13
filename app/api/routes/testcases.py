@@ -46,6 +46,11 @@ def start_metric_design(id: int, design: MetricDesignIterationCreate, session: S
     
     # Call LLM Stub
     llm_response = generate_metric_proposals(design.user_intent, test_case)
+
+    # Persist user_intent on TestCase if not already set or if updated
+    if test_case.user_intent != design.user_intent:
+        test_case.user_intent = design.user_intent
+        session.add(test_case)
     
     # Calculate iteration number
     last_iteration = session.exec(select(MetricDesignIteration).where(MetricDesignIteration.test_case_id == id).order_by(MetricDesignIteration.iteration_number.desc())).first()
@@ -146,6 +151,7 @@ def commit_evaluation(id: int, request: EvaluationRunCommitRequest, session: Ses
         version_number=version_number,
         status="completed",
         aggregated_score=eval_response.aggregated_score,
+        gap_analysis=eval_response.gap_analysis,
         notes=request.notes
     )
     session.add(run)
@@ -184,7 +190,7 @@ def read_testcase_runs(id: int, session: Session = Depends(get_session)):
 def generate_report(id: int, request: ReportRequest, session: Session = Depends(get_session)):
     try:
         from app.services.report import create_test_case_report, ReportResponse as SvcResp
-        report = create_test_case_report(session, id, request.start_date, request.end_date)
+        report = create_test_case_report(session, id, request.start_date, request.end_date, request.start_version, request.end_version)
         # Parse content_json back for response
         import json
         return ReportResponse(
@@ -199,3 +205,65 @@ def generate_report(id: int, request: ReportRequest, session: Session = Depends(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{id}/dashboard")
+def get_testcase_dashboard(id: int, session: Session = Depends(get_session)):
+    from app.models.evaluation import EvaluationRun, MetricResult
+    from sqlalchemy import func
+    
+    test_case = session.get(TestCase, id)
+    if not test_case:
+        raise HTTPException(status_code=404, detail="TestCase not found")
+        
+    runs = session.exec(select(EvaluationRun).where(EvaluationRun.test_case_id == id).order_by(EvaluationRun.version_number.asc())).all()
+    
+    aggregated_score_points = [
+        {"version_number": r.version_number, "score": r.aggregated_score, "created_at": r.created_at} 
+        for r in runs if r.aggregated_score is not None
+    ]
+    
+    # Get all metric results for these runs
+    run_ids = [r.id for r in runs]
+    if not run_ids:
+         return {"aggregated_score_points": [], "metrics": []}
+         
+    results = session.exec(select(MetricResult).where(MetricResult.evaluation_run_id.in_(run_ids))).all()
+    
+    # Group by metric_definition_id
+    metrics_map = {}
+    for res in results:
+        mid = res.metric_definition_id
+        if mid not in metrics_map:
+            # Find definition name if possible, or use res.metric_name
+            metrics_map[mid] = {
+                "metric_definition_id": mid,
+                "metric_name": res.metric_name,
+                "points": []
+            }
+        
+        # Find run to get version number
+        run = next((r for r in runs if r.id == res.evaluation_run_id), None)
+        if run:
+            metrics_map[mid]["points"].append({
+                "version_number": run.version_number,
+                "score": res.score,
+                "created_at": run.created_at
+            })
+            
+    # Sort points
+    for m in metrics_map.values():
+        m["points"].sort(key=lambda x: x["version_number"])
+        
+    return {
+        "aggregated_score_points": aggregated_score_points,
+        "metrics": list(metrics_map.values())
+    }
+
+@router.delete("/{id}", status_code=204)
+def delete_testcase(id: int, session: Session = Depends(get_session)):
+    test_case = session.get(TestCase, id)
+    if not test_case:
+        raise HTTPException(status_code=404, detail="TestCase not found")
+    session.delete(test_case)
+    session.commit()
+    return None

@@ -10,4 +10,4 @@ class Project(ProjectBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
-    test_cases: List["TestCase"] = Relationship(back_populates="project")
+    test_cases: List["TestCase"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
