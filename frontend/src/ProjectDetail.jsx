@@ -23,8 +23,8 @@ export default function ProjectDetail() {
         if (!id) return;
 
         Promise.all([
-            fetch(`http://localhost:8000/api/v1/projects/${id}`).then(res => res.json()),
-            fetch(`http://localhost:8000/api/v1/projects/${id}/testcases`).then(res => res.json())
+            fetch(`/api/v1/projects/${id}`).then(res => res.json()),
+            fetch(`/api/v1/projects/${id}/testcases`).then(res => res.json())
         ]).then(([projData, tcData]) => {
             setProject(projData);
             setTestCases(tcData);
@@ -40,7 +40,7 @@ export default function ProjectDetail() {
         if (!confirm("Are you sure you want to delete this test case?")) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/testcases/${tcId}`, { method: "DELETE" });
+            const res = await fetch(`/api/v1/testcases/${tcId}`, { method: "DELETE" });
             if (res.ok) {
                 setTestCases(prev => prev.filter(tc => tc.id !== tcId));
             } else {

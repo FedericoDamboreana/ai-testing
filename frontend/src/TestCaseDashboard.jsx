@@ -7,7 +7,7 @@ export default function TestCaseDashboard({ params }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetch(`http://localhost:8000/api/v1/testcases/${id}/dashboard`)
+        fetch(`/api/v1/testcases/${id}/dashboard`)
             .then(res => res.json())
             .then(data => {
                 setData(data)

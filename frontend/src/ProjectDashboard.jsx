@@ -8,23 +8,23 @@ export default function ProjectDashboard({ params }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetch(`http://localhost:8000/api/v1/projects/${projectId}/dashboard`)
-            .then(res => {
+        const fetchData = async () => {
+            try {
+                const res = await fetch(`/api/v1/projects/${projectId}/dashboard`);
                 if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`)
+                    throw new Error(`HTTP error! status: ${res.status}`);
                 }
-                return res.json()
-            })
-            .then(data => {
-                setData(data)
-                setLoading(false)
-            })
-            .catch(err => {
-                console.error(err)
-                setLoading(false)
-                setData(null) // Ensure data is null on error
-            })
-    }, [projectId])
+                const resultData = await res.json();
+                setData(resultData);
+                setLoading(false);
+            } catch (err) {
+                console.error(err);
+                setLoading(false);
+                setData(null); // Ensure data is null on error
+            }
+        };
+        fetchData();
+    }, [projectId]);
 
     if (loading) return <div>Loading...</div>
     if (!data) return (

@@ -111,7 +111,7 @@ export default function NewTestCase() {
         setLoading(true);
         try {
             // 1. Create Test Case
-            const res = await fetch(`http://localhost:8000/api/v1/projects/${projectId}/testcases`, {
+            const res = await fetch(`/api/v1/projects/${projectId}/testcases`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, description, user_intent: userIntent }),

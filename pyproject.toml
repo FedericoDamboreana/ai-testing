@@ -1,6 +1,6 @@
 [project]
 name = "llm-eval-tool"
-version = "0.4.8"
+version = "0.4.9"
 description = "Internal single-user evaluation tool for LLM-based systems"
 authors = [{name = "Antigravity", email = "antigravity@google.com"}]
 requires-python = ">=3.9"

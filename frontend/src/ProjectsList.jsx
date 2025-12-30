@@ -16,7 +16,7 @@ export default function ProjectsList() {
     }, []);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/v1/projects/")
+        fetch("/api/v1/projects/")
             .then((res) => res.json())
             .then((data) => {
                 setProjects(data);
@@ -33,7 +33,7 @@ export default function ProjectsList() {
         if (!confirm("Are you sure you want to delete this project?")) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/projects/${pId}`, { method: "DELETE" });
+            const res = await fetch(`/api/v1/projects/${pId}`, { method: "DELETE" });
             if (res.ok) {
                 setProjects(prev => prev.filter(p => p.id !== pId));
             } else {

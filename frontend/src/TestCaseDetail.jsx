@@ -137,7 +137,7 @@ export default function TestCaseDetail() {
         }
         setEvalLoading(true);
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/testcases/${id}/evaluate/preview`, {
+            const res = await fetch(`/api/v1/testcases/${id}/evaluate/preview`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outputs: uploadedFiles.map(f => f.content) })
@@ -164,7 +164,7 @@ export default function TestCaseDetail() {
     const generateReport = async () => {
         setReportLoading(true);
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/testcases/${id}/report`, {
+            const res = await fetch(`/api/v1/testcases/${id}/report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -208,7 +208,7 @@ export default function TestCaseDetail() {
     const deleteMetric = async (metricId) => {
         if (!confirm("Are you sure you want to delete this metric? This cannot be undone.")) return;
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/metrics/${metricId}`, {
+            const res = await fetch(`/api/v1/metrics/${metricId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
@@ -233,7 +233,7 @@ export default function TestCaseDetail() {
         }
         setEvalLoading(true);
         try {
-            await fetch(`http://localhost:8000/api/v1/testcases/${id}/evaluate/commit`, {
+            await fetch(`/api/v1/testcases/${id}/evaluate/commit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
