@@ -35,7 +35,7 @@ export default function TestCaseDetail() {
     const [testCase, setTestCase] = useState(null);
 
     // Evaluation State
-    const [evalOutput, setEvalOutput] = useState("");
+    const [uploadedFiles, setUploadedFiles] = useState([]);
     const [previewResult, setPreviewResult] = useState(null);
     const [evalLoading, setEvalLoading] = useState(false);
     const [fileProcessing, setFileProcessing] = useState(false);
@@ -43,24 +43,35 @@ export default function TestCaseDetail() {
 
     // Helper to extract text (Reused from NewTestCase)
     const extractText = async (file) => {
+        let text = "";
         if (file.type === "application/pdf") {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let text = "";
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const content = await page.getTextContent();
                 text += content.items.map((item) => item.str).join(" ") + "\\n";
             }
-            return text;
         } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
             const arrayBuffer = await file.arrayBuffer();
             const result = await mammoth.extractRawText({ arrayBuffer });
-            return result.value;
+            text = result.value;
+        } else if (file.name.toLowerCase().endsWith(".doc") || file.type === "application/msword") {
+            // Backend extraction for legacy .doc
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch("http://localhost:8000/api/v1/tools/text-extraction", {
+                method: "POST",
+                body: formData
+            });
+            if (!res.ok) throw new Error("Failed to extract text from .doc");
+            const data = await res.json();
+            text = data.text;
         } else {
             // Plain text
-            return await file.text();
+            text = await file.text();
         }
+        return { name: file.name, content: text };
     };
 
     const handleFileUpload = async (e) => {
@@ -69,15 +80,20 @@ export default function TestCaseDetail() {
 
         setFileProcessing(true);
         try {
-            const texts = await Promise.all(files.map(extractText));
-            const newContent = texts.join("\n\n---\n\n");
-            setEvalOutput(prev => prev ? prev + "\n" + newContent : newContent);
+            const newFiles = await Promise.all(files.map(extractText));
+            setUploadedFiles(prev => [...prev, ...newFiles]);
         } catch (err) {
             console.error("File parse error", err);
             alert("Error parsing file. Ensure it is a valid text, PDF, or Docx file.");
         } finally {
             setFileProcessing(false);
+            // Reset input so same file can be selected again if needed
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
+    };
+
+    const removeFile = (index) => {
+        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     // Dashboard State
@@ -103,14 +119,6 @@ export default function TestCaseDetail() {
         fetch(`http://localhost:8000/api/v1/testcases/${id}/runs`)
             .then(res => res.json())
             .then(runs => {
-                // Adapt runs to simple dash data for now
-                // Ideally backend has a dashboard endpoint, but previous file used /dashboard endpoint which I didn't see in backend routes list?
-                // Wait, I saw `dashboard.py` in `app/api/routes`?
-                // Let's check Step 25: `dashboard.py` exists. 
-                // But in `projects.py` there was no dashboard include.
-                // Maybe it's mounted in main.py? I didn't check main.py.
-                // Use the code from previous file: `fetch(http://localhost:8000/api/v1/testcases/${id}/dashboard)`
-                // If that worked, I'll keep it.
                 fetch(`http://localhost:8000/api/v1/testcases/${id}/dashboard`)
                     .then(r => {
                         if (r.ok) return r.json();
@@ -123,12 +131,16 @@ export default function TestCaseDetail() {
     };
 
     const runPreview = async () => {
+        if (uploadedFiles.length === 0) {
+            alert("Please upload at least one file.");
+            return;
+        }
         setEvalLoading(true);
         try {
             const res = await fetch(`http://localhost:8000/api/v1/testcases/${id}/evaluate/preview`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ outputs: [evalOutput] })
+                body: JSON.stringify({ outputs: uploadedFiles.map(f => f.content) })
             });
             const data = await res.json();
             setPreviewResult(data);
@@ -157,12 +169,35 @@ export default function TestCaseDetail() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     start_version: parseInt(reportConfig.start),
-                    end_version: parseInt(reportConfig.end)
+                    end_version: parseInt(reportConfig.end),
+                    format: "docx"
                 })
             });
             if (!res.ok) throw new Error("Failed to generate report");
-            const data = await res.json();
-            setGeneratedReport(data.summary_text);
+
+            // Handle file download
+            const blob = await res.blob();
+            // Try to extract filename from content-disposition
+            const disposition = res.headers.get('Content-Disposition');
+            let filename = `Report_TestCase_${id}.docx`;
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) {
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+
+            setGeneratedReport("Report downloaded successfully! Check your downloads folder.");
         } catch (e) {
             console.error(e);
             alert("Error generating report");
@@ -170,16 +205,45 @@ export default function TestCaseDetail() {
         setReportLoading(false);
     };
 
+    const deleteMetric = async (metricId) => {
+        if (!confirm("Are you sure you want to delete this metric? This cannot be undone.")) return;
+        try {
+            const res = await fetch(`http://localhost:8000/api/v1/metrics/${metricId}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                // Remove from local state
+                setTestCase(prev => ({
+                    ...prev,
+                    metrics: prev.metrics.filter(m => m.id !== metricId)
+                }));
+            } else {
+                alert("Failed to delete metric");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error deleting metric");
+        }
+    };
+
     const commitEval = async () => {
+        if (uploadedFiles.length === 0) {
+            alert("Please upload at least one file.");
+            return;
+        }
         setEvalLoading(true);
         try {
             await fetch(`http://localhost:8000/api/v1/testcases/${id}/evaluate/commit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ outputs: [evalOutput], notes: "Manual run via UI" })
+                body: JSON.stringify({
+                    outputs: uploadedFiles.map(f => f.content),
+                    notes: "Manual run via UI with files: " + uploadedFiles.map(f => f.name).join(", ")
+                })
             });
             alert("Evaluation Committed! Version bumped.");
             setPreviewResult(null);
+            setUploadedFiles([]);
             loadDashboard();
             setActiveTab('dashboard');
         } catch (e) { console.error(e); alert("Error committing"); }
@@ -263,8 +327,8 @@ export default function TestCaseDetail() {
                                 <h3 className="text-lg font-medium text-[#002B5C] mb-4">Confirmed Metrics</h3>
                                 <div className="space-y-4">
                                     {testCase.metrics?.map((m, i) => (
-                                        <div key={i} className="bg-white p-4 rounded border border-gray-200 hover:border-blue-300 transition-colors">
-                                            <div className="flex justify-between items-start mb-2">
+                                        <div key={i} className="bg-white p-4 rounded border border-gray-200 hover:border-blue-300 transition-colors relative group">
+                                            <div className="flex justify-between items-start mb-2 pr-8">
                                                 <span className="font-bold text-gray-800">{m.name}</span>
                                                 <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">{m.metric_type}</span>
                                             </div>
@@ -273,6 +337,13 @@ export default function TestCaseDetail() {
                                                 <span>Target: {m.target_direction}</span>
                                                 {m.scale_type === 'bounded' && <span>Scale: {m.scale_min}-{m.scale_max}</span>}
                                             </div>
+                                            <button
+                                                onClick={() => deleteMetric(m.id)}
+                                                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Delete Metric"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
                                         </div>
                                     ))}
                                     {(!testCase.metrics || testCase.metrics.length === 0) && (
@@ -288,44 +359,73 @@ export default function TestCaseDetail() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full pb-10">
                             <div className="flex flex-col gap-4 h-full">
                                 <div className="bg-white p-4 rounded shadow-sm border border-gray-100 flex-1 flex flex-col min-h-[300px]">
-                                    <h3 className="text-[#002B5C] font-medium mb-3 flex justify-between items-center">
-                                        Input Output
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-[#002B5C] font-medium">Files to Evaluate</h3>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => fileInputRef.current?.click()}
-                                                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                                                className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2"
                                                 disabled={fileProcessing}
                                             >
-                                                {fileProcessing ? "Processing..." : "Upload File"}
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                                {fileProcessing ? "Processing..." : "Add Files"}
                                             </button>
                                             <input
                                                 type="file"
                                                 hidden
+                                                multiple
                                                 ref={fileInputRef}
-                                                accept=".txt,.pdf,.docx"
+                                                accept=".txt,.pdf,.docx,.doc"
                                                 onChange={handleFileUpload}
                                             />
                                         </div>
-                                    </h3>
-                                    <textarea
-                                        value={evalOutput}
-                                        onChange={e => setEvalOutput(e.target.value)}
-                                        className="flex-1 w-full bg-gray-50 border border-gray-200 rounded p-3 text-gray-900 resize-none font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                        placeholder="Paste the LLM output you want to evaluate here, or upload a file..."
-                                    ></textarea>
+                                    </div>
+
+                                    <div className="flex-1 bg-gray-50 border border-gray-200 rounded p-4 overflow-auto">
+                                        {uploadedFiles.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+                                                <svg className="w-10 h-10 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                <p>No files uploaded yet.</p>
+                                                <p className="text-xs">Upload .txt, .pdf, or .docx files to begin evaluation.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {uploadedFiles.map((file, index) => (
+                                                    <div key={index} className="flex items-center justify-between bg-white p-3 rounded border border-gray-200 shadow-sm hover:border-blue-300 transition-colors">
+                                                        <div className="flex items-center gap-3 overflow-hidden">
+                                                            <div className="bg-blue-100 text-blue-700 p-2 rounded">
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                            </div>
+                                                            <div className="truncate">
+                                                                <div className="font-medium text-gray-700 truncate text-sm" title={file.name}>{file.name}</div>
+                                                                <div className="text-xs text-gray-400">{file.content.length} chars</div>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => removeFile(index)}
+                                                            className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded"
+                                                            title="Remove file"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex gap-4">
                                     <button
                                         onClick={runPreview}
-                                        disabled={evalLoading || !evalOutput.trim()}
-                                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded border border-gray-300 font-medium disabled:opacity-50"
+                                        disabled={evalLoading || uploadedFiles.length === 0}
+                                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded border border-gray-300 font-medium disabled:opacity-50 transition-colors"
                                     >
                                         Preview Score
                                     </button>
                                     <button
                                         onClick={commitEval}
                                         disabled={!previewResult || evalLoading}
-                                        className="flex-1 bg-[#002B5C] hover:bg-[#001f42] text-white py-3 rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                        className="flex-1 bg-[#002B5C] hover:bg-[#001f42] text-white py-3 rounded shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors"
                                     >
                                         Commit & Save
                                     </button>
@@ -453,7 +553,7 @@ export default function TestCaseDetail() {
                                                     disabled={reportLoading}
                                                     className="w-full bg-[#002B5C] text-white py-3 rounded font-medium hover:bg-[#001f42] disabled:opacity-50"
                                                 >
-                                                    {reportLoading ? "Analyzing & Generating..." : "Generate AI Report"}
+                                                    {reportLoading ? "Generating..." : "Download Word Report"}
                                                 </button>
                                             </div>
                                         ) : (

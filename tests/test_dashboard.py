@@ -34,7 +34,7 @@ def test_test_case_dashboard(session: Session):
     )
     session.add(r1)
     session.commit()
-    session.add(MetricResult(evaluation_run_id=r1.id, metric_definition_id=m1.id, score=50.0))
+    session.add(MetricResult(evaluation_run_id=r1.id, metric_definition_id=m1.id, score=50.0, metric_name="M1"))
     
     # Run 2
     r2 = EvaluationRun(
@@ -43,7 +43,7 @@ def test_test_case_dashboard(session: Session):
     )
     session.add(r2)
     session.commit()
-    session.add(MetricResult(evaluation_run_id=r2.id, metric_definition_id=m1.id, score=80.0))
+    session.add(MetricResult(evaluation_run_id=r2.id, metric_definition_id=m1.id, score=80.0, metric_name="M1"))
     session.commit()
     
     # Test Service

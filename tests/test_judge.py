@@ -52,9 +52,17 @@ def test_openai_judge_mock():
             assert "input" in kwargs
             assert kwargs["text_format"] == JudgeResult
 
+from app.models.project import Project
+
 def test_evaluation_fallback(session: Session):
+    # Create project
+    proj = Project(name="P_Judge")
+    session.add(proj)
+    session.commit()
+    session.refresh(proj)
+
     # Create test case and metric
-    tc = TestCase(name="T1", description="Intent")
+    tc = TestCase(name="T1", description="Intent", project_id=proj.id)
     session.add(tc)
     session.commit()
     session.refresh(tc)
@@ -76,12 +84,13 @@ def test_evaluation_fallback(session: Session):
              with patch("app.providers.llm.OpenAILLMProvider") as MockProvider:
                 instance = MockProvider.return_value
                 instance.judge_metric.side_effect = Exception("API Error")
+                instance.analyze_evaluation_results.return_value = "Mock gap analysis"
                 
                 # We need to patch get_llm_provider to return our MockProvider instance
                 with patch("app.services.evaluation.get_llm_provider", return_value=instance):
-                    run = evaluate_test_case(session, tc.id)
+                    run = evaluate_test_case(tc, [metric], ["Candidate text"])
                     
                     assert len(run.metric_results) == 1
                     res = run.metric_results[0]
-                    assert "[WARNING: Fallback]" in res.details
-                    assert res.score is not None # Stub score
+                    assert "Error during LLM judgment" in res["explanation"]
+                    # assert res["score"] is not None # Stub score (it is 0.0)

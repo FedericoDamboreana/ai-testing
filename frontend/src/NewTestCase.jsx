@@ -47,6 +47,17 @@ export default function NewTestCase() {
             const arrayBuffer = await file.arrayBuffer();
             const result = await mammoth.extractRawText({ arrayBuffer });
             return result.value;
+        } else if (file.name.toLowerCase().endsWith(".doc") || file.type === "application/msword") {
+            // Backend extraction for legacy .doc
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch("http://localhost:8000/api/v1/tools/text-extraction", {
+                method: "POST",
+                body: formData
+            });
+            if (!res.ok) throw new Error("Failed to extract text from .doc");
+            const data = await res.json();
+            return data.text;
         } else {
             // Plain text
             return await file.text();
@@ -242,7 +253,7 @@ export default function NewTestCase() {
                             type="file"
                             hidden
                             ref={fileInputRef}
-                            accept=".txt,.pdf,.docx"
+                            accept=".txt,.pdf,.docx,.doc"
                             multiple
                             onChange={(e) => handleFileUpload(e, type)}
                         />

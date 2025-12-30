@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 import json
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from app.core.db import get_session
 from app.models.test_case import TestCase, Example
@@ -186,11 +187,21 @@ def read_testcase_runs(id: int, session: Session = Depends(get_session)):
     runs = session.exec(select(EvaluationRun).where(EvaluationRun.test_case_id == id).order_by(EvaluationRun.version_number.desc())).all()
     return runs
 
-@router.post("/{id}/report", response_model=ReportResponse)
+@router.post("/{id}/report", response_model=None)
 def generate_report(id: int, request: ReportRequest, session: Session = Depends(get_session)):
     try:
-        from app.services.report import create_test_case_report, ReportResponse as SvcResp
+        from app.services.report import create_test_case_report, generate_test_case_word_report
         report = create_test_case_report(session, id, request.start_date, request.end_date, request.start_version, request.end_version)
+        
+        if request.format == "docx":
+             file_stream = generate_test_case_word_report(session, report.id)
+             filename = f"Report_{report.scope_type}_{report.scope_id}_{report.created_at.strftime('%Y%m%d')}.docx"
+             return StreamingResponse(
+                 file_stream,
+                 media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                 headers={"Content-Disposition": f"attachment; filename={filename}"}
+             )
+
         # Parse content_json back for response
         import json
         return ReportResponse(

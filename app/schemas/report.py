@@ -8,6 +8,7 @@ class ReportRequest(BaseModel):
     end_date: Optional[datetime] = None
     start_version: Optional[int] = None
     end_version: Optional[int] = None
+    format: str = "json" # "json" or "docx"
 
 class ReportContentMetricDelta(BaseModel):
     metric_name: str

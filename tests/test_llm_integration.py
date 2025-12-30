@@ -8,12 +8,16 @@ from app.schemas.metric import StructuredLLMResponse
 
 def test_default_is_stub():
     # settings.LLM_MODE default is "stub"
-    provider = get_llm_provider()
-    assert isinstance(provider, StubLLMProvider)
+    with patch("app.core.config.settings.LLM_MODE", "stub"):
+        provider = get_llm_provider()
+        assert isinstance(provider, StubLLMProvider)
 
 def test_config_validation_fail_fast():
     # If LLM_MODE is openai but no key
     with pytest.raises(ValueError):
+        # We need to bypass the singleton settings if possible or create a new one
+        # But settings is instantiated at module level.
+        # We can try to instantiate Settings directly.
         Settings(LLM_MODE="openai", OPENAI_API_KEY=None, _env_file=None)
 
 def test_openai_provider_initialization():
@@ -50,7 +54,7 @@ def test_openai_metric_design_mock_call():
             mock_parse.return_value = mock_response
             
             provider = OpenAILLMProvider()
-            test_case = TestCase(name="Test", description="Desc")
+            test_case = TestCase(name="Test", description="Desc", project_id=1)
             
             provider.generate_metric_proposals("Intent", test_case)
             

@@ -31,8 +31,10 @@ class MetricDefinitionCreate(BaseModel):
                  raise ValueError("scale_max must be greater than scale_min")
                  
         elif self.scale_type == ScaleType.UNBOUNDED:
+            # Generously handle LLM hallucinations by unsetting these if provided
             if self.scale_min is not None or self.scale_max is not None:
-                raise ValueError("Unbounded metrics must not have scale_min or scale_max")
+                self.scale_min = None
+                self.scale_max = None
         
         # New validation rules
         if self.metric_type == MetricType.LLM_JUDGE:

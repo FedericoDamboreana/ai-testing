@@ -21,6 +21,10 @@ class LLMProvider(ABC):
     def judge_metric(self, metric: MetricDefinition, candidate_text: str, test_case_context: str) -> JudgeResult:
         pass
 
+    @abstractmethod
+    def analyze_evaluation_results(self, test_case: TestCase, metric_results: List[Any]) -> str:
+        pass
+
 class StubLLMProvider(LLMProvider):
     def generate_metric_proposals(self, intent: str, test_case: TestCase) -> StructuredLLMResponse:
         # Deterministic stub returning 5 metrics
@@ -51,10 +55,11 @@ class StubLLMProvider(LLMProvider):
                 MetricDefinitionCreate(
                     name="Policy violations count",
                     description="Counts the number of policy violations in the response.",
-                    metric_type=MetricType.LLM_JUDGE,
+                    metric_type=MetricType.DETERMINISTIC,
                     scale_type=ScaleType.UNBOUNDED,
                     target_direction=TargetDirection.LOWER_IS_BETTER,
-                    evaluation_prompt="Count violations."
+                    evaluation_prompt="Count violations.", # Stub legacy
+                    rule_definition="Count violations."
                 ),
                 MetricDefinitionCreate(
                     name="Response latency",
@@ -85,6 +90,9 @@ class StubLLMProvider(LLMProvider):
             score=score,
             explanation=f"Stub judged based on length ({len(candidate_text)} chars)."
         )
+
+    def analyze_evaluation_results(self, test_case: TestCase, metric_results: List[Any]) -> str:
+        return f"Stub Gap Analysis for {test_case.name}: Performance is consistent with expectations based on {len(metric_results)} metrics."
 
 class OpenAILLMProvider(LLMProvider):
     def __init__(self):
@@ -181,13 +189,50 @@ Output must be in JSON format with 'score' (float) and 'explanation' (short Engl
         )
         return response.output_parsed
     def generate_report_narrative(self, context_data: Any) -> str:
-        # context_data is ReportContent pydantic model
-        system_prompt = """You are a Data Analyst writing a business summary for an LLM evaluation report.
-Analyze the provided metric deltas and aggregated score changes.
-Write a concise, natural language paragraph explaining what improved, what worsened, and any significant trends.
-Do not use markdown formatting. Keep it professional."""
+        # context_data is now expected to be a dict with 'test_case_name', 'history': [{version, score, gap_analysis}]
+        
+        system_prompt = """You are a lead Data Analyst. 
+Your goal is to write a cohesive 'Story of Progress' for an executive report.
 
-        user_content = f"Report Data: {context_data.model_dump_json()}"
+Input: A chronological list of evaluation versions, each with a score and a detailed gap analysis.
+Task: Synthesize these inputs into a single, flowing narrative that analyzes the **overall trajectory** from the first version to the last.
+- IGNORE intermediate version details unless they represent a critical turning point.
+- Focus strictly on comparing the STARTING STATE vs the ENDING STATE.
+- What specific flaws were present initially?
+- How were they resolved (or not) by the final version?
+
+Style Guidelines:
+- Write in a professional, reporting tone.
+- Do NOT output a chronological list (e.g., "Version 1... Version 2..."). Focus on the net evolution.
+- Round all scores to 1 decimal place.
+- Do NOT use em-dashes (—). Use normal dashes (-) or colons (:) instead.
+- Use bolding (**) for key terms or metrics for readability.
+- Do NOT include any "[End of Report]" text.
+"""
+
+        if hasattr(context_data, "model_dump_json"):
+             user_content = f"Report Data: {context_data.model_dump_json()}"
+        else:
+             user_content = f"Report Data: {json.dumps(context_data, indent=2)}"
+
+        completion = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ]
+        )
+        return completion.choices[0].message.content.strip()
+
+    def analyze_evaluation_results(self, test_case: TestCase, metric_results: List[Any]) -> str:
+        system_prompt = """You are a QA Analyst suitable for analyzing the results of a specific test case evaluation.
+Review the scores and explanations for each metric. Identify the main performance gap or success.
+Provide a short, 1-2 sentence "Gap Analysis" summarizing the model's current performance state on this test case.
+"""
+        # simplified serialization
+        results_summary = [{"name": r.get('metric_name'), "score": r.get('score'), "explanation": r.get('explanation')} for r in metric_results]
+        
+        user_content = f"Test Case: {test_case.name}\nResults: {json.dumps(results_summary, indent=2)}"
 
         completion = self.client.chat.completions.create(
             model=self.model,
@@ -195,7 +240,7 @@ Do not use markdown formatting. Keep it professional."""
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            temperature=0.2
+
         )
         return completion.choices[0].message.content.strip()
 

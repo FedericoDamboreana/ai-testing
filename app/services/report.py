@@ -95,18 +95,28 @@ def create_test_case_report(session: Session, test_case_id: int, start: Optional
     
     # Generate Narrative using AI with access to Gap Analysis
     # Construct a rich context for the LLM
-    context_str = f"Report for Test Case: {test_case.name}\n"
+    history_data = []
     for r in runs:
-        context_str += f"- Version {r.version_number} (Score: {r.aggregated_score}): {r.gap_analysis or 'No gap analysis'}\n"
+        history_data.append({
+            "version": r.version_number,
+            "score": round(r.aggregated_score, 1) if r.aggregated_score is not None else 0.0,
+            "gap_analysis": r.gap_analysis or "No gap analysis available."
+        })
         
-    # Stub: simplified narrative generation
-    narrative = f"Progress Report (v{first_run.version_number} - v{last_run.version_number}):\n\nThe test case performance has {agg_dir} by {abs(agg_delta):.2f} points.\n\nAI Analysis of Runs:\n{context_str}\n\n[End of Report]"
+    context_data = {
+        "test_case_name": test_case.name,
+        "history": history_data
+    }
+    
+    provider = get_llm_provider()
+    narrative = provider.generate_report_narrative(context_data)
     
     report = Report(
         scope_type=ReportScope.TEST_CASE,
         scope_id=test_case_id,
-        start_date=start,
-        end_date=end,
+        # Fallback to run dates if explicit range not provided
+        start_date=start or first_run.created_at,
+        end_date=end or last_run.created_at,
         content_json=content.model_dump_json(),
         summary_text=narrative
     )
@@ -185,3 +195,91 @@ def create_project_report(session: Session, project_id: int, start: datetime, en
     session.commit()
     session.refresh(report)
     return report
+
+import io
+from app.services.docx_generator import generate_word_report
+
+def generate_test_case_word_report(session: Session, report_id: int) -> io.BytesIO:
+    report = session.get(Report, report_id)
+    if not report:
+        raise ValueError("Report not found")
+        
+    test_case_id = report.scope_id
+    test_case = session.get(TestCase, test_case_id)
+    name = test_case.name if test_case else f"Test Case {test_case_id}"
+    
+    # Re-fetch runs based on report dates
+    # Assuming start_date/end_date inclusive
+    runs = session.exec(select(EvaluationRun)
+        .where(EvaluationRun.test_case_id == test_case_id)
+        .where(EvaluationRun.created_at >= report.start_date)
+        .where(EvaluationRun.created_at <= report.end_date)
+        .order_by(EvaluationRun.created_at.asc())
+    ).all()
+    
+    # Run Data for Charts
+    provider = get_llm_provider()
+    run_data = []
+    run_ids = []
+    
+    for r in runs:
+        # Backfill Gap Analysis if missing or placeholder
+        if not r.gap_analysis or "[Stub analysis placeholder]" in r.gap_analysis:
+             # Trigger analysis (lazy backfill)
+             # Need to ensure metric_results are loaded
+             if not r.metric_results:
+                 # refresh to load relationship if lazy
+                 session.refresh(r) 
+             
+             # Convert metrics to list of dicts/objects expected by provider
+             # provider expects list of objects with .score, .metric_name (MetricResult objects work due to duck typing or we wrap)
+             # provider.analyze_evaluation_results implementation iterates accessing .get() which implies dict.
+             # Wait, my implementation of analyze_evaluation_results in Step 129:
+             # results_summary = [{"name": r.get('metric_name'), "score": r.get('score'), "explanation": r.get('explanation')} for r in metric_results]
+             # It expects a list of dicts!
+             # But `r.metric_results` is a list of SQLModel objects.
+             # I need to convert them to dicts.
+             
+             results_dicts = [{"metric_name": mr.metric_name, "score": mr.score, "explanation": mr.explanation} for mr in r.metric_results]
+             
+             analysis = provider.analyze_evaluation_results(test_case, results_dicts)
+             r.gap_analysis = analysis
+             session.add(r)
+             session.commit()
+             session.refresh(r)
+
+        run_data.append({
+            "version": r.version_number,
+            "score": r.aggregated_score,
+            "created_at": r.created_at,
+            "gap_analysis": r.gap_analysis
+        })
+        run_ids.append(r.id)
+        
+    # Metric Data for Charts
+    metrics_data = []
+    # Grouping
+    metrics_map = {} # name -> list of scores
+    
+    for r in runs:
+         # triggers lazy load of metric_results
+         for res in r.metric_results:
+             if res.metric_name not in metrics_map:
+                 metrics_map[res.metric_name] = []
+             metrics_map[res.metric_name].append({
+                 "version": r.version_number,
+                 "score": res.score
+             })
+    
+    for m_name, scores in metrics_map.items():
+        metrics_data.append({
+            "metric_name": m_name,
+            "scores": scores
+        })
+
+    return generate_word_report(
+        title=f"Report: {name}",
+        summary=report.summary_text,
+        run_data=run_data,
+        metrics_data=metrics_data
+    )

@@ -124,3 +124,57 @@ Run the automated tests:
 ```bash
 pytest
 ```
+
+## Deployment
+
+### Docker
+
+To build the Docker image locally:
+
+```bash
+docker build -t llm-eval-tool .
+```
+
+To run the container locally:
+
+```bash
+docker run -p 8080:8080 -e PORT=8080 -e OPENAI_API_KEY=your_key_here llm-eval-tool
+```
+
+### Verification
+
+To verify the Docker image works correctly:
+
+1.  **Build**:
+    ```bash
+    docker build -t llm-eval-tool .
+    ```
+
+2.  **Run**:
+    ```bash
+    # Runs on localhost:8080
+    docker run -p 8080:8080 -e PORT=8080 -e OPENAI_API_KEY=sk-... llm-eval-tool
+    ```
+
+3.  **Verify**:
+    ```bash
+    curl http://localhost:8080/health
+    ```
+
+### Cloud Run Deployment
+
+See the [Deployment Guide](docs/deployment.md) for full instructions on:
+-   Building for production (`linux/amd64`)
+-   Configuring Secrets
+-   Setting up SQLite persistence
+
+### Environment Variables
+
+| Variable | Description |
+| :--- | :--- |
+| `PORT` | Port to listen on (default: 8080) |
+| `LLM_MODE` | `stub` or `openai` (default: stub) |
+| `OPENAI_API_KEY` | Required if `LLM_MODE=openai` |
+| `OPENAI_MODEL` | Default: `gpt-4o` |
+| `SQLITE_PATH` | Path to SQLite DB (e.g., `/data/app.db`) |
+| `DATABASE_URL` | Override full DB URL (optional) |

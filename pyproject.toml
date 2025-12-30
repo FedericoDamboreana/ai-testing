@@ -1,6 +1,6 @@
 [project]
 name = "llm-eval-tool"
-version = "0.4.6"
+version = "0.4.7"
 description = "Internal single-user evaluation tool for LLM-based systems"
 authors = [{name = "Antigravity", email = "antigravity@google.com"}]
 requires-python = ">=3.9"
@@ -12,6 +12,8 @@ dependencies = [
     "python-multipart>=0.0.9",
     "openai>=1.0.0",
     "pydantic-settings>=2.0.0",
+    "python-docx>=1.1.0",
+    "matplotlib>=3.8.0",
 ]
 
 [project.optional-dependencies]
