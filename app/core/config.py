@@ -5,7 +5,7 @@ from pydantic import SecretStr, field_validator
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "LLM Eval Tool"
-    VERSION: str = "0.4.9"
+    VERSION: str = "0.4.10"
     DATABASE_URL: str = "sqlite:///./test.db"
     
     # LLM Settings

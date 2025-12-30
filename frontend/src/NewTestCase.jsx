@@ -51,7 +51,7 @@ export default function NewTestCase() {
             // Backend extraction for legacy .doc
             const formData = new FormData();
             formData.append("file", file);
-            const res = await fetch("http://localhost:8000/api/v1/tools/text-extraction", {
+            const res = await fetch("/api/v1/tools/text-extraction", {
                 method: "POST",
                 body: formData
             });
@@ -123,7 +123,7 @@ export default function NewTestCase() {
             // 2. Upload Examples
             const allExamples = [...desiredExamples, ...currentExamples];
             await Promise.all(allExamples.map(ex =>
-                fetch(`http://localhost:8000/api/v1/testcases/${data.id}/examples`, {
+                fetch(`/api/v1/testcases/${data.id}/examples`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ content: ex.content, type: ex.type })
@@ -131,7 +131,7 @@ export default function NewTestCase() {
             ));
 
             // 3. Generate Metrics (Initial)
-            const metricRes = await fetch(`http://localhost:8000/api/v1/testcases/${data.id}/metric-design`, {
+            const metricRes = await fetch(`/api/v1/testcases/${data.id}/metric-design`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_intent: userIntent })
@@ -159,7 +159,7 @@ export default function NewTestCase() {
             // Let's combine original intent + feedback for the new "User Intent"
             const newIntent = feedback ? `${userIntent}\n\nFeedback on previous: ${feedback}` : userIntent;
 
-            const metricRes = await fetch(`http://localhost:8000/api/v1/testcases/${testCaseId}/metric-design`, {
+            const metricRes = await fetch(`/api/v1/testcases/${testCaseId}/metric-design`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_intent: newIntent })
@@ -180,7 +180,7 @@ export default function NewTestCase() {
         if (!testCaseId || !metricIteration) return;
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:8000/api/v1/testcases/${testCaseId}/metric-design/${metricIteration.id}/confirm`, {
+            const res = await fetch(`/api/v1/testcases/${testCaseId}/metric-design/${metricIteration.id}/confirm`, {
                 method: "POST"
             });
             if (!res.ok) throw new Error("Failed to confirm metrics");

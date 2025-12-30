@@ -60,7 +60,7 @@ export default function TestCaseDetail() {
             // Backend extraction for legacy .doc
             const formData = new FormData();
             formData.append("file", file);
-            const res = await fetch("http://localhost:8000/api/v1/tools/text-extraction", {
+            const res = await fetch("/api/v1/tools/text-extraction", {
                 method: "POST",
                 body: formData
             });
@@ -105,7 +105,7 @@ export default function TestCaseDetail() {
 
     useEffect(() => {
         if (id) {
-            fetch(`http://localhost:8000/api/v1/testcases/${id}`)
+            fetch(`/api/v1/testcases/${id}`)
                 .then(res => res.json())
                 .then(setTestCase)
                 .catch(console.error);
@@ -116,10 +116,10 @@ export default function TestCaseDetail() {
 
     const loadDashboard = () => {
         if (!id) return;
-        fetch(`http://localhost:8000/api/v1/testcases/${id}/runs`)
+        fetch(`/api/v1/testcases/${id}/runs`)
             .then(res => res.json())
             .then(runs => {
-                fetch(`http://localhost:8000/api/v1/testcases/${id}/dashboard`)
+                fetch(`/api/v1/testcases/${id}/dashboard`)
                     .then(r => {
                         if (r.ok) return r.json();
                         return null;
