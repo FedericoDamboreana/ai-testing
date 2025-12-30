@@ -5,7 +5,7 @@ from pydantic import SecretStr, field_validator
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "LLM Eval Tool"
-    VERSION: str = "0.4.7"
+    VERSION: str = "0.4.8"
     DATABASE_URL: str = "sqlite:///./test.db"
     
     # LLM Settings
@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     
     # Custom SQLite path
     SQLITE_PATH: str | None = None
+    
+    # GCS Bootstrap
+    GCS_DB_BUCKET: str | None = None
+    GCS_DB_OBJECT: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env", 

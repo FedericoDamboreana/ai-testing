@@ -1,20 +1,25 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.core.config import settings
-from app.core.db import init_db
+from app.core.db import engine, init_db
 from app.api.main import api_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.bootstrap import bootstrap_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Bootstrap DB from GCS if needed
+    bootstrap_database(settings)
+    
+    # Check/Init DB (create tables if missing)
     init_db()
     yield
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
+    version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    lifespan=lifespan,
-    version=settings.VERSION
+    lifespan=lifespan
 )
 
 # Allow all origins for simplicity in this dev tool

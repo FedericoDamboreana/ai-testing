@@ -126,7 +126,28 @@ We do not bake the `OPENAI_API_KEY` into the image or environment variable liter
         --set-secrets OPENAI_API_KEY=OPENAI_API_KEY:latest
     ```
 
-## 7. Troubleshooting
+## 7. Database Bootstrap (GCS)
+
+To seed the production database from a local copy:
+
+1.  **Create Bucket**:
+    ```bash
+    gsutil mb -l us-central1 gs://[YOUR_BUCKET_NAME]
+    ```
+2.  **Upload Local DB**:
+    ```bash
+    ./scripts/gcs_upload_db.sh [YOUR_BUCKET_NAME] ./test.db app.db
+    # Or manually: gsutil cp ./test.db gs://[YOUR_BUCKET_NAME]/app.db
+    ```
+3.  **Configure Cloud Run**:
+    Add the following environment variables:
+    *   `GCS_DB_BUCKET`: `[YOUR_BUCKET_NAME]`
+    *   `GCS_DB_OBJECT`: `app.db`
+    *   `SQLITE_PATH`: `/data/app.db` (Ensure persistence volume is mounted)
+4.  **Permissions**:
+    Ensure the Cloud Run Service Account has `roles/storage.objectViewer` on the bucket.
+
+## 8. Troubleshooting
 
 ### Container fails to start
 *   **Symptom**: "Exec format error" in logs.
@@ -159,7 +180,7 @@ curl https://[YOUR-SERVICE-URL]/health
 # Expected: {"status": "ok"}
 ```
 
-## 8. Verification Checklist
+## 9. Verification Checklist
 
 - [ ] Docker image built for `linux/amd64`.
 - [ ] Image pushed to Artifact Registry.
