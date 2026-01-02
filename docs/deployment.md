@@ -147,7 +147,21 @@ To seed the production database from a local copy:
 4.  **Permissions**:
     Ensure the Cloud Run Service Account has `roles/storage.objectViewer` on the bucket.
 
-## 8. Troubleshooting
+## 8. Updating Configuration (CRITICAL WARNING)
+
+> [!CAUTION]
+> When updating environment variables using `gcloud run services update --set-env-vars`, it REPLACES the existing variables unless you specify all of them. This can accidentally remove `SQLITE_PATH`, causing data loss (app reverts to ephemeral storage).
+
+**ALWAYS use `--update-env-vars` instead of `--set-env-vars` to preserve existing variables.**
+
+**Safe Update Example:**
+```bash
+gcloud run services update llm-eval-tracker \
+    --update-env-vars=OPENAI_MODEL=gpt-5 \
+    --region us-central1
+```
+
+If you must reset variables, ensure you include `SQLITE_PATH=/data/app.db` in your command.
 
 ### Container fails to start
 *   **Symptom**: "Exec format error" in logs.
@@ -180,7 +194,7 @@ curl https://[YOUR-SERVICE-URL]/health
 # Expected: {"status": "ok"}
 ```
 
-## 9. Verification Checklist
+## 10. Verification Checklist
 
 - [ ] Docker image built for `linux/amd64`.
 - [ ] Image pushed to Artifact Registry.
