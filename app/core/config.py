@@ -5,13 +5,13 @@ from pydantic import SecretStr, field_validator
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "LLM Eval Tool"
-    VERSION: str = "0.4.10"
+    VERSION: str = "0.4.11"
     DATABASE_URL: str = "sqlite:///./test.db"
     
     # LLM Settings
     LLM_MODE: Literal["stub", "openai"] = "stub"
     OPENAI_API_KEY: SecretStr | None = None
-    OPENAI_MODEL: str = "gpt-4o"
+    OPENAI_MODEL: str = "gpt-5"
     
     # Custom SQLite path
     SQLITE_PATH: str | None = None

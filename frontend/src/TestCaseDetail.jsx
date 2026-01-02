@@ -297,9 +297,9 @@ export default function TestCaseDetail() {
                                 <h3 className="text-lg font-medium text-[#002B5C] mb-4">Desired Outputs (Target)</h3>
                                 <div className="space-y-4">
                                     {desiredExamples.length === 0 && <p className="text-gray-400 italic">No examples provided.</p>}
-                                    {desiredExamples.map(ex => (
+                                    {desiredExamples.map((ex, i) => (
                                         <div key={ex.id} className="bg-gray-50 p-3 rounded border border-gray-200 text-sm">
-                                            <div className="font-semibold text-gray-700 mb-1">Example #{ex.id}</div>
+                                            <div className="font-semibold text-gray-700 mb-1">Example #{i + 1}</div>
                                             <pre className="whitespace-pre-wrap text-gray-600 font-sans">{ex.content}</pre>
                                         </div>
                                     ))}
@@ -309,9 +309,9 @@ export default function TestCaseDetail() {
                                 <h3 className="text-lg font-medium text-[#002B5C] mb-4">Current Outputs (Baseline)</h3>
                                 <div className="space-y-4">
                                     {currentExamples.length === 0 && <p className="text-gray-400 italic">No examples provided.</p>}
-                                    {currentExamples.map(ex => (
+                                    {currentExamples.map((ex, i) => (
                                         <div key={ex.id} className="bg-gray-50 p-3 rounded border border-gray-200 text-sm">
-                                            <div className="font-semibold text-gray-700 mb-1">Example #{ex.id}</div>
+                                            <div className="font-semibold text-gray-700 mb-1">Example #{i + 1}</div>
                                             <pre className="whitespace-pre-wrap text-gray-600 font-sans">{ex.content}</pre>
                                         </div>
                                     ))}
