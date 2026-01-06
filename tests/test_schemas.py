@@ -23,14 +23,16 @@ def test_metric_definition_create_schema():
     assert metric.target_direction == TargetDirection.HIGHER_IS_BETTER
 
     # Invalid: Unbounded with bounds
-    with pytest.raises(ValueError):
-        MetricDefinitionCreate(
-            name="Test", description="Desc", metric_type=MetricType.DETERMINISTIC,
-            scale_type=ScaleType.UNBOUNDED,
-            scale_min=0, scale_max=100,
-            target_direction=TargetDirection.HIGHER_IS_BETTER,
-            rule_definition="Rule"
-        )
+    # Valid: Unbounded with bounds (auto-fixed)
+    m_unbounded = MetricDefinitionCreate(
+        name="Test", description="Desc", metric_type=MetricType.DETERMINISTIC,
+        scale_type=ScaleType.UNBOUNDED,
+        scale_min=0, scale_max=100,
+        target_direction=TargetDirection.HIGHER_IS_BETTER,
+        rule_definition="Rule"
+    )
+    assert m_unbounded.scale_min is None
+    assert m_unbounded.scale_max is None
         
     # Valid: LLM_JUDGE with prompt
     MetricDefinitionCreate(

@@ -6,7 +6,7 @@ from app.models.metric import MetricDesignIteration, MetricDefinition
 from app.models.evaluation import EvaluationRun
 import pytest
 
-def test_metric_design_workflow(client: TestClient, session: Session):
+def test_metric_design_workflow(auth_client: TestClient, session: Session):
     # Setup: Create Project and TestCase
     project = Project(name="Test Project")
     session.add(project)
@@ -17,14 +17,14 @@ def test_metric_design_workflow(client: TestClient, session: Session):
     session.commit()
     
     # 1. Create Example
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/testcases/{test_case.id}/examples",
         json={"content": "This is a test example."}
     )
     assert response.status_code == 200
     
     # 2. Start Metric Design Iteration
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/testcases/{test_case.id}/metric-design",
         json={
             "user_intent": "I want to check tone.",
@@ -38,7 +38,7 @@ def test_metric_design_workflow(client: TestClient, session: Session):
     assert "Style similarity" in data["llm_proposed_metrics"] # Check stub output
     
     # 3. Confirm Metric Design
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/testcases/{test_case.id}/metric-design/{iteration_id}/confirm"
     )
     assert response.status_code == 200
@@ -50,14 +50,14 @@ def test_metric_design_workflow(client: TestClient, session: Session):
     assert len(metrics) == 3
     
     # 4. Enforce Immutability (Second Design Attempt)
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/testcases/{test_case.id}/metric-design",
         json={"user_intent": "Attempt to change metrics"}
     )
     assert response.status_code == 409
     
     # 5. Enforce Immutability (Second Confirm Attempt - on same iteration)
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/testcases/{test_case.id}/metric-design/{iteration_id}/confirm"
     )
     assert response.status_code == 409 # Metrics already confirmed (global check catches this first)

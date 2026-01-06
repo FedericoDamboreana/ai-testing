@@ -8,9 +8,9 @@ def test_read_main(client: TestClient):
     response = client.get("/docs")
     assert response.status_code == 200
 
-def test_api_v1_prefix(client: TestClient):
+def test_api_v1_prefix(auth_client: TestClient):
     # Check that our stub endpoints are mounted under api/v1
     # GET /api/v1/projects
-    response = client.get(f"{settings.API_V1_STR}/projects")
+    response = auth_client.get(f"{settings.API_V1_STR}/projects")
     assert response.status_code == 200
     assert response.json() == [] # Stub returns empty list

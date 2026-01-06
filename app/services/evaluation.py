@@ -7,7 +7,7 @@ from app.services.llm import get_llm_provider
 from app.providers.llm import StubLLMProvider
 from app.schemas.evaluation import EvaluationRunPreviewResponse
 
-def evaluate_test_case(test_case: TestCase, metrics: List[MetricDefinition], outputs: List[str]) -> EvaluationRunPreviewResponse:
+def evaluate_test_case(test_case: TestCase, metrics: List[MetricDefinition], outputs: List[str], model_name: Optional[str] = None) -> EvaluationRunPreviewResponse:
     """
     Deterministic stub for evaluation.
     """
@@ -16,7 +16,7 @@ def evaluate_test_case(test_case: TestCase, metrics: List[MetricDefinition], out
     warnings = []
     
     # Instantiate provider once
-    provider = get_llm_provider()
+    provider = get_llm_provider(override_model=model_name)
     
     # Construct context context for judgment
     context_str = f"Test Case: {test_case.name}\nDescription: {test_case.description}\nIntent: {test_case.user_intent}"

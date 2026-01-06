@@ -9,6 +9,7 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     full_name: Optional[str] = None
     hashed_password: str
+    preferred_model: Optional[str] = Field(default="gpt-5")
 
     projects: List["Project"] = Relationship(back_populates="owner")
     # memberships: List["ProjectMembership"] = Relationship(back_populates="user")

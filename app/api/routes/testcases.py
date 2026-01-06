@@ -12,6 +12,8 @@ from app.schemas.metric import MetricDesignIterationCreate, MetricDesignIteratio
 from app.schemas.evaluation import EvaluationRunPreviewRequest, EvaluationRunPreviewResponse, EvaluationRunCommitRequest, EvaluationRunRead
 from app.schemas.report import ReportRequest, ReportResponse
 from app.services.llm import generate_metric_proposals
+from app.api import deps
+from app.models import User
 
 router = APIRouter()
 
@@ -34,7 +36,7 @@ def create_example(id: int, example: ExampleCreate, session: Session = Depends(g
     return db_example
 
 @router.post("/{id}/metric-design", response_model=MetricDesignIterationRead)
-def start_metric_design(id: int, design: MetricDesignIterationCreate, session: Session = Depends(get_session)):
+def start_metric_design(id: int, design: MetricDesignIterationCreate, session: Session = Depends(get_session), current_user: User = Depends(deps.get_current_user)):
     test_case = session.get(TestCase, id)
     if not test_case:
         raise HTTPException(status_code=404, detail="TestCase not found")
@@ -46,7 +48,7 @@ def start_metric_design(id: int, design: MetricDesignIterationCreate, session: S
         raise HTTPException(status_code=409, detail="Metrics already confirmed for this test case")
     
     # Call LLM Stub
-    llm_response = generate_metric_proposals(design.user_intent, test_case)
+    llm_response = generate_metric_proposals(design.user_intent, test_case, model_name=current_user.preferred_model)
 
     # Persist user_intent on TestCase if not already set or if updated
     if test_case.user_intent != design.user_intent:
@@ -115,7 +117,7 @@ def confirm_metric_design(id: int, iteration_id: int, session: Session = Depends
     return created_metrics
 
 @router.post("/{id}/evaluate/preview", response_model=EvaluationRunPreviewResponse)
-def preview_evaluation(id: int, request: EvaluationRunPreviewRequest, session: Session = Depends(get_session)):
+def preview_evaluation(id: int, request: EvaluationRunPreviewRequest, session: Session = Depends(get_session), current_user: User = Depends(deps.get_current_user)):
     test_case = session.get(TestCase, id)
     if not test_case:
         raise HTTPException(status_code=404, detail="TestCase not found")
@@ -125,10 +127,10 @@ def preview_evaluation(id: int, request: EvaluationRunPreviewRequest, session: S
         raise HTTPException(status_code=409, detail="No active metrics for this test case")
         
     from app.services.evaluation import evaluate_test_case
-    return evaluate_test_case(test_case, metrics, request.outputs)
+    return evaluate_test_case(test_case, metrics, request.outputs, model_name=current_user.preferred_model)
 
 @router.post("/{id}/evaluate/commit", response_model=EvaluationRunRead)
-def commit_evaluation(id: int, request: EvaluationRunCommitRequest, session: Session = Depends(get_session)):
+def commit_evaluation(id: int, request: EvaluationRunCommitRequest, session: Session = Depends(get_session), current_user: User = Depends(deps.get_current_user)):
     test_case = session.get(TestCase, id)
     if not test_case:
         raise HTTPException(status_code=404, detail="TestCase not found")
@@ -139,7 +141,7 @@ def commit_evaluation(id: int, request: EvaluationRunCommitRequest, session: Ses
 
     # Run evaluation
     from app.services.evaluation import evaluate_test_case
-    eval_response = evaluate_test_case(test_case, metrics, request.outputs)
+    eval_response = evaluate_test_case(test_case, metrics, request.outputs, model_name=current_user.preferred_model)
     
     # Get next version number
     from app.models.evaluation import EvaluationRun, MetricResult

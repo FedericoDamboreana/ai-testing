@@ -8,6 +8,7 @@ import NewTestCase from './NewTestCase'
 import TestCaseDetail from './TestCaseDetail'
 import Login from './Login'
 import Register from './Register'
+import Settings from './Settings'
 
 function ProtectedRoute({ component: Component, ...rest }) {
     const { user, loading } = useAuth();
@@ -41,7 +42,7 @@ function AppContent() {
                 <ProtectedRoute component={TestCaseDetail} />
             </Route>
             <Route path="/settings">
-                <ProtectedRoute component={() => <div className="p-8">Settings Page (Coming Soon)</div>} />
+                <ProtectedRoute component={Settings} />
             </Route>
 
             {/* Fallback */}

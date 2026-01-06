@@ -25,3 +25,33 @@ def client_fixture(session: Session):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+
+@pytest.fixture(name="user")
+def user_fixture(session: Session):
+    from app.models import User
+    from app.core.security import get_password_hash
+    user = User(
+        email="test@example.com", 
+        hashed_password=get_password_hash("password"),
+        preferred_model="gpt-5"
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+@pytest.fixture(name="auth_client")
+def auth_client_fixture(session: Session, user):
+    def get_session_override():
+        return session
+    
+    def get_current_user_override():
+        return user
+
+    from app.api import deps
+    app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[deps.get_current_user] = get_current_user_override
+    
+    client = TestClient(app)
+    yield client
+    app.dependency_overrides.clear()

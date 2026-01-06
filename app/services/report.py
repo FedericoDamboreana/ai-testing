@@ -10,11 +10,11 @@ from app.schemas.report import ReportContent, ReportContentMetricDelta, ReportRe
 
 from app.providers.llm import get_llm_provider
 
-def generate_narrative_for_test_case(content: ReportContent) -> str:
-    provider = get_llm_provider()
+def generate_narrative_for_test_case(content: ReportContent, model_name: Optional[str] = None) -> str:
+    provider = get_llm_provider(override_model=model_name)
     return provider.generate_report_narrative(content)
 
-def create_test_case_report(session: Session, test_case_id: int, start: Optional[datetime] = None, end: Optional[datetime] = None, start_version: Optional[int] = None, end_version: Optional[int] = None) -> Report:
+def create_test_case_report(session: Session, test_case_id: int, start: Optional[datetime] = None, end: Optional[datetime] = None, start_version: Optional[int] = None, end_version: Optional[int] = None, model_name: Optional[str] = None) -> Report:
     test_case = session.get(TestCase, test_case_id)
     if not test_case:
         raise ValueError("TestCase not found")
@@ -108,7 +108,7 @@ def create_test_case_report(session: Session, test_case_id: int, start: Optional
         "history": history_data
     }
     
-    provider = get_llm_provider()
+    provider = get_llm_provider(override_model=model_name)
     narrative = provider.generate_report_narrative(context_data)
     
     report = Report(

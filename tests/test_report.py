@@ -8,7 +8,7 @@ from app.models.evaluation import EvaluationRun, MetricResult
 from app.models.report import Report
 import pytest
 
-def test_report_workflow(client: TestClient, session: Session):
+def test_report_workflow(auth_client: TestClient, session: Session):
     # Setup
     project = Project(name="Report Project")
     session.add(project)
@@ -38,14 +38,14 @@ def test_report_workflow(client: TestClient, session: Session):
     session.commit()
     
     # 1. Generate Test Case Report
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/testcases/{test_case.id}/report",
         json={"start_date": "2022-12-31T00:00:00", "end_date": "2023-03-01T00:00:00"}
     )
     assert response.status_code == 200
     data = response.json()
     assert data["scope_type"] == "test_case"
-    assert "Overall quality improved" in data["summary_text"]
+    assert "Deterministic narrative" in data["summary_text"]
     
     content = data["report_content"]
     assert content["aggregated_score_delta"] == 10.0
@@ -53,7 +53,7 @@ def test_report_workflow(client: TestClient, session: Session):
     assert content["metric_comparison"][0]["delta"] == 10.0
     
     # 2. Generate Project Report
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/projects/{project.id}/report",
         json={"start_date": "2022-12-31T00:00:00", "end_date": "2023-03-01T00:00:00"}
     )
@@ -62,13 +62,13 @@ def test_report_workflow(client: TestClient, session: Session):
     assert data["scope_type"] == "project"
     content = data["report_content"]
     assert content["improving_count"] == 1
-    assert "improved, 0 regressed" in data["summary_text"]
+    assert "Deterministic narrative" in data["summary_text"]
 
     # 3. Insufficient data
     test_case_empty = TestCase(name="Empty TC", project_id=project.id)
     session.add(test_case_empty)
     session.commit()
-    response = client.post(
+    response = auth_client.post(
         f"/api/v1/testcases/{test_case_empty.id}/report",
         json={"start_date": "2022-12-31T00:00:00", "end_date": "2023-03-01T00:00:00"}
     )

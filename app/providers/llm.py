@@ -95,14 +95,15 @@ class StubLLMProvider(LLMProvider):
         return f"Stub Gap Analysis for {test_case.name}: Performance is consistent with expectations based on {len(metric_results)} metrics."
 
 class OpenAILLMProvider(LLMProvider):
-    def __init__(self):
+    def __init__(self, override_model: Optional[str] = None):
         # Fail fast if key missing
         if not settings.OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY is required for OpenAILLMProvider")
         try:
              from openai import OpenAI
              self.client = OpenAI(api_key=settings.OPENAI_API_KEY.get_secret_value())
-             self.model = settings.OPENAI_MODEL
+             # Use override if provided, else settings default
+             self.model = override_model if override_model else settings.OPENAI_MODEL
         except ImportError:
             raise ImportError("openai package is required for OpenAILLMProvider")
 
@@ -188,6 +189,7 @@ Output must be in JSON format with 'score' (float) and 'explanation' (short Engl
             text_format=JudgeResult
         )
         return response.output_parsed
+
     def generate_report_narrative(self, context_data: Any) -> str:
         # context_data is now expected to be a dict with 'test_case_name', 'history': [{version, score, gap_analysis}]
         
@@ -244,7 +246,8 @@ Provide a short, 1-2 sentence "Gap Analysis" summarizing the model's current per
         )
         return completion.choices[0].message.content.strip()
 
-def get_llm_provider() -> LLMProvider:
+def get_llm_provider(override_model: Optional[str] = None) -> LLMProvider:
     if settings.LLM_MODE == "openai":
-        return OpenAILLMProvider()
+        return OpenAILLMProvider(override_model=override_model)
     return StubLLMProvider()
+

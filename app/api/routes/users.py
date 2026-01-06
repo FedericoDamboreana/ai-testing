@@ -8,10 +8,7 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-class UserRead(BaseModel):
-    id: int
-    email: str
-    full_name: str | None = None
+from app.schemas.user import UserRead, UserUpdate
 
 @router.get("/", response_model=List[UserRead])
 def read_users(
@@ -33,4 +30,21 @@ def read_user_me(
     """
     Get current user.
     """
+    return current_user
+
+@router.patch("/me", response_model=UserRead)
+def update_user_me(
+    *,
+    session: Session = Depends(get_session),
+    user_in: UserUpdate,
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Update own user.
+    """
+    user_data = user_in.model_dump(exclude_unset=True)
+    current_user.sqlmodel_update(user_data)
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
     return current_user
