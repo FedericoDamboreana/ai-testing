@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRoute, Link } from "wouter";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from "./Layout";
+import { fetchWithAuth } from "./AuthContext";
 import * as mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -60,7 +61,7 @@ export default function TestCaseDetail() {
             // Backend extraction for legacy .doc
             const formData = new FormData();
             formData.append("file", file);
-            const res = await fetch("/api/v1/tools/text-extraction", {
+            const res = await fetchWithAuth("/api/v1/tools/text-extraction", {
                 method: "POST",
                 body: formData
             });
@@ -105,7 +106,7 @@ export default function TestCaseDetail() {
 
     useEffect(() => {
         if (id) {
-            fetch(`/api/v1/testcases/${id}`)
+            fetchWithAuth(`/api/v1/testcases/${id}`)
                 .then(res => res.json())
                 .then(setTestCase)
                 .catch(console.error);
@@ -116,10 +117,10 @@ export default function TestCaseDetail() {
 
     const loadDashboard = () => {
         if (!id) return;
-        fetch(`/api/v1/testcases/${id}/runs`)
+        fetchWithAuth(`/api/v1/testcases/${id}/runs`)
             .then(res => res.json())
             .then(runs => {
-                fetch(`/api/v1/testcases/${id}/dashboard`)
+                fetchWithAuth(`/api/v1/testcases/${id}/dashboard`)
                     .then(r => {
                         if (r.ok) return r.json();
                         return null;
@@ -137,7 +138,7 @@ export default function TestCaseDetail() {
         }
         setEvalLoading(true);
         try {
-            const res = await fetch(`/api/v1/testcases/${id}/evaluate/preview`, {
+            const res = await fetchWithAuth(`/api/v1/testcases/${id}/evaluate/preview`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outputs: uploadedFiles.map(f => f.content) })
@@ -164,7 +165,7 @@ export default function TestCaseDetail() {
     const generateReport = async () => {
         setReportLoading(true);
         try {
-            const res = await fetch(`/api/v1/testcases/${id}/report`, {
+            const res = await fetchWithAuth(`/api/v1/testcases/${id}/report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -208,7 +209,7 @@ export default function TestCaseDetail() {
     const deleteMetric = async (metricId) => {
         if (!confirm("Are you sure you want to delete this metric? This cannot be undone.")) return;
         try {
-            const res = await fetch(`/api/v1/metrics/${metricId}`, {
+            const res = await fetchWithAuth(`/api/v1/metrics/${metricId}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
@@ -233,7 +234,7 @@ export default function TestCaseDetail() {
         }
         setEvalLoading(true);
         try {
-            await fetch(`/api/v1/testcases/${id}/evaluate/commit`, {
+            await fetchWithAuth(`/api/v1/testcases/${id}/evaluate/commit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

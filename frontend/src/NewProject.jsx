@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import Layout from "./Layout";
+import { fetchWithAuth } from "./AuthContext";
 
 export default function NewProject() {
     const [name, setName] = useState("");
@@ -13,7 +14,7 @@ export default function NewProject() {
         setLoading(true);
 
         try {
-            const res = await fetch("/api/v1/projects/", {
+            const res = await fetchWithAuth("/api/v1/projects/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, description }),

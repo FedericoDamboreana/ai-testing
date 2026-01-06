@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { fetchWithAuth } from './AuthContext'
 
 export default function TestCaseDashboard({ params }) {
     const id = params.id
@@ -7,7 +8,7 @@ export default function TestCaseDashboard({ params }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetch(`/api/v1/testcases/${id}/dashboard`)
+        fetchWithAuth(`/api/v1/testcases/${id}/dashboard`)
             .then(res => res.json())
             .then(data => {
                 setData(data)

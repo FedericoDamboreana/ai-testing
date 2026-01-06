@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useLocation, useRoute } from "wouter";
 import Layout from "./Layout";
+import { fetchWithAuth } from "./AuthContext";
 import * as mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -51,7 +52,7 @@ export default function NewTestCase() {
             // Backend extraction for legacy .doc
             const formData = new FormData();
             formData.append("file", file);
-            const res = await fetch("/api/v1/tools/text-extraction", {
+            const res = await fetchWithAuth("/api/v1/tools/text-extraction", {
                 method: "POST",
                 body: formData
             });
@@ -111,7 +112,7 @@ export default function NewTestCase() {
         setLoading(true);
         try {
             // 1. Create Test Case
-            const res = await fetch(`/api/v1/projects/${projectId}/testcases`, {
+            const res = await fetchWithAuth(`/api/v1/projects/${projectId}/testcases`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, description, user_intent: userIntent }),
@@ -123,7 +124,7 @@ export default function NewTestCase() {
             // 2. Upload Examples
             const allExamples = [...desiredExamples, ...currentExamples];
             await Promise.all(allExamples.map(ex =>
-                fetch(`/api/v1/testcases/${data.id}/examples`, {
+                fetchWithAuth(`/api/v1/testcases/${data.id}/examples`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ content: ex.content, type: ex.type })
@@ -131,7 +132,7 @@ export default function NewTestCase() {
             ));
 
             // 3. Generate Metrics (Initial)
-            const metricRes = await fetch(`/api/v1/testcases/${data.id}/metric-design`, {
+            const metricRes = await fetchWithAuth(`/api/v1/testcases/${data.id}/metric-design`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_intent: userIntent })
@@ -159,7 +160,7 @@ export default function NewTestCase() {
             // Let's combine original intent + feedback for the new "User Intent"
             const newIntent = feedback ? `${userIntent}\n\nFeedback on previous: ${feedback}` : userIntent;
 
-            const metricRes = await fetch(`/api/v1/testcases/${testCaseId}/metric-design`, {
+            const metricRes = await fetchWithAuth(`/api/v1/testcases/${testCaseId}/metric-design`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_intent: newIntent })
@@ -180,7 +181,7 @@ export default function NewTestCase() {
         if (!testCaseId || !metricIteration) return;
         setLoading(true);
         try {
-            const res = await fetch(`/api/v1/testcases/${testCaseId}/metric-design/${metricIteration.id}/confirm`, {
+            const res = await fetchWithAuth(`/api/v1/testcases/${testCaseId}/metric-design/${metricIteration.id}/confirm`, {
                 method: "POST"
             });
             if (!res.ok) throw new Error("Failed to confirm metrics");

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { fetchWithAuth } from "./AuthContext";
 import Layout from "./Layout";
 
 export default function ProjectsList() {
@@ -16,14 +17,25 @@ export default function ProjectsList() {
     }, []);
 
     useEffect(() => {
-        fetch("/api/v1/projects/")
-            .then((res) => res.json())
-            .then((data) => {
-                setProjects(data);
+        fetchWithAuth("/api/v1/projects/")
+            .then(async (res) => {
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        setProjects(data);
+                    } else {
+                        console.error("Expected array but got:", data);
+                        setProjects([]);
+                    }
+                } else {
+                    console.error("Failed to fetch projects", res.status);
+                    // Handle 401 specifically if needed, though fetchWithAuth might.
+                }
                 setLoading(false);
             })
             .catch((err) => {
                 console.error(err);
+                setProjects([]);
                 setLoading(false);
             });
     }, []);
@@ -33,7 +45,7 @@ export default function ProjectsList() {
         if (!confirm("Are you sure you want to delete this project?")) return;
 
         try {
-            const res = await fetch(`/api/v1/projects/${pId}`, { method: "DELETE" });
+            const res = await fetchWithAuth(`/api/v1/projects/${pId}`, { method: "DELETE" });
             if (res.ok) {
                 setProjects(prev => prev.filter(p => p.id !== pId));
             } else {
@@ -78,7 +90,7 @@ export default function ProjectsList() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-visible">
                         {/* Header */}
                         <div className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             <div className="col-span-6">Project Name</div>
@@ -91,7 +103,7 @@ export default function ProjectsList() {
                             <div
                                 key={project.id}
                                 onClick={() => setLocation(`/projects/${project.id}`)}
-                                className="grid grid-cols-12 gap-4 px-6 py-5 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors cursor-pointer group relative"
+                                className={`grid grid-cols-12 gap-4 px-6 py-5 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors cursor-pointer group relative ${openMenuId === project.id ? "z-50" : "z-0"}`}
                             >
                                 <div className="col-span-6 font-semibold text-[#002B5C] text-lg">
                                     {project.name}

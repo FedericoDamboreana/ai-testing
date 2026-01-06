@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useRoute } from 'wouter'
+import { fetchWithAuth } from './AuthContext'
 
 export default function ProjectDashboard({ params }) {
     // Default to project 1 for simplicity if not provided, or handle routing
@@ -10,7 +11,7 @@ export default function ProjectDashboard({ params }) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await fetch(`/api/v1/projects/${projectId}/dashboard`);
+                const res = await fetchWithAuth(`/api/v1/projects/${projectId}/dashboard`);
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
