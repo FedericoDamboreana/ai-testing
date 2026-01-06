@@ -34,6 +34,7 @@ export default function TestCaseDetail() {
 
     const [activeTab, setActiveTab] = useState("examples");
     const [testCase, setTestCase] = useState(null);
+    const [intentExpanded, setIntentExpanded] = useState(false);
 
     // Evaluation State
     const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -268,8 +269,20 @@ export default function TestCaseDetail() {
                     </Link>
                     <p className="text-gray-600">{testCase.description}</p>
                     {testCase.user_intent && (
-                        <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 inline-block">
-                            <strong>Intent:</strong> {testCase.user_intent}
+                        <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded border border-gray-100 block">
+                            <strong>Intent:</strong>{" "}
+                            {intentExpanded || testCase.user_intent.length <= 120
+                                ? testCase.user_intent
+                                : `${testCase.user_intent.substring(0, 120)}...`}
+
+                            {testCase.user_intent.length > 120 && (
+                                <button
+                                    onClick={() => setIntentExpanded(!intentExpanded)}
+                                    className="ml-2 text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none"
+                                >
+                                    {intentExpanded ? "See Less" : "See More"}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
