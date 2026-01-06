@@ -10,6 +10,7 @@ class User(SQLModel, table=True):
     full_name: Optional[str] = None
     hashed_password: str
     preferred_model: Optional[str] = Field(default="gpt-5")
+    profile_picture_url: Optional[str] = None
 
     projects: List["Project"] = Relationship(back_populates="owner")
     # memberships: List["ProjectMembership"] = Relationship(back_populates="user")

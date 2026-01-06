@@ -6,6 +6,8 @@ export default function Settings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [preferredModel, setPreferredModel] = useState("gpt-4o");
+    const [fullName, setFullName] = useState("");
+    const [profilePictureUrl, setProfilePictureUrl] = useState("");
     const [user, setUser] = useState(null);
 
     const availableModels = [
@@ -20,9 +22,9 @@ export default function Settings() {
             .then(res => res.json())
             .then(data => {
                 setUser(data);
-                if (data.preferred_model) {
-                    setPreferredModel(data.preferred_model);
-                }
+                if (data.preferred_model) setPreferredModel(data.preferred_model);
+                if (data.full_name) setFullName(data.full_name);
+                if (data.profile_picture_url) setProfilePictureUrl(data.profile_picture_url);
                 setLoading(false);
             })
             .catch(err => {
@@ -37,10 +39,15 @@ export default function Settings() {
             const res = await fetchWithAuth("/api/v1/users/me", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ preferred_model: preferredModel })
+                body: JSON.stringify({
+                    preferred_model: preferredModel,
+                    full_name: fullName,
+                    profile_picture_url: profilePictureUrl
+                })
             });
             if (res.ok) {
                 alert("Settings saved!");
+                // Optionally reload or update context
             } else {
                 alert("Failed to save settings");
             }
@@ -56,6 +63,40 @@ export default function Settings() {
     return (
         <Layout title="Settings">
             <div className="max-w-2xl bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-xl font-semibold text-[#002B5C] mb-6">Profile Settings</h3>
+
+                <div className="mb-6 grid grid-cols-1 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input
+                            type="text"
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            placeholder="e.g. John Doe"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture URL</label>
+                        <input
+                            type="text"
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                            value={profilePictureUrl}
+                            onChange={(e) => setProfilePictureUrl(e.target.value)}
+                            placeholder="https://example.com/avatar.png"
+                        />
+                        {profilePictureUrl && (
+                            <div className="mt-2">
+                                <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                                <img src={profilePictureUrl} alt="Avatar Preview" className="h-16 w-16 rounded-full object-cover border" onError={(e) => e.target.style.display = 'none'} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="border-t border-gray-100 my-8"></div>
+
                 <h3 className="text-xl font-semibold text-[#002B5C] mb-6">Model Configuration</h3>
 
                 <div className="mb-6">
