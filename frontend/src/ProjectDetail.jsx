@@ -113,9 +113,27 @@ export default function ProjectDetail() {
                                 ← Back to Projects
                             </button>
                         </Link>
+
                         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                             <h3 className="text-lg font-semibold text-[#002B5C] mb-2">About</h3>
-                            <p className="text-gray-500">{project.description || "No description provided."}</p>
+                            <div className="text-gray-500 whitespace-pre-wrap">
+                                {project.description ? (
+                                    <>
+                                        {openMenuId === "desc" || project.description.length <= 300
+                                            ? project.description
+                                            : `${project.description.substring(0, 300)}...`}
+
+                                        {project.description.length > 300 && (
+                                            <button
+                                                onClick={() => setOpenMenuId(openMenuId === "desc" ? null : "desc")}
+                                                className="ml-2 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline focus:outline-none"
+                                            >
+                                                {openMenuId === "desc" ? "See Less" : "See More"}
+                                            </button>
+                                        )}
+                                    </>
+                                ) : "No description provided."}
+                            </div>
                         </div>
                     </div>
 
@@ -161,10 +179,10 @@ export default function ProjectDetail() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* Test Cases Section */}
-                <div>
+                < div >
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xl font-semibold text-[#002B5C]">Test Cases</h3>
                         <Link href={`/projects/${id}/testcases/new`}>
@@ -174,103 +192,107 @@ export default function ProjectDetail() {
                         </Link>
                     </div>
 
-                    {testCases.length === 0 ? (
-                        <div className="text-center py-12 bg-white rounded-lg border border-gray-200 border-dashed">
-                            <p className="text-gray-400 mb-4">No test cases yet.</p>
-                            <Link href={`/projects/${id}/testcases/new`}>
-                                <span className="text-[#002B5C] font-semibold hover:underline cursor-pointer">Create your first test case</span>
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="grid gap-3">
-                            {testCases.map(tc => (
-                                <div
-                                    key={tc.id}
-                                    onClick={() => setLocation(`/testcases/${tc.id}`)}
-                                    className="bg-white p-4 rounded-lg border border-gray-100 hover:border-blue-400 hover:shadow-sm cursor-pointer transition-all flex justify-between items-center group relative"
-                                >
-                                    <div>
-                                        <div className="font-semibold text-[#002B5C] group-hover:text-blue-600 transition-colors">
-                                            {tc.name}
-                                        </div>
-                                        <div className="text-sm text-gray-500 mt-1">{tc.description}</div>
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div className="relative">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenMenuId(openMenuId === tc.id ? null : tc.id);
-                                            }}
-                                            className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-                                        >
-                                            {/* Three dots icon */}
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                                            </svg>
-                                        </button>
-
-                                        {/* Dropdown Menu */}
-                                        {openMenuId === tc.id && (
-                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-10 animate-in fade-in zoom-in-95 duration-100">
-                                                <button
-                                                    onClick={(e) => handleDeleteTestCase(e, tc.id)}
-                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                    Delete
-                                                </button>
+                    {
+                        testCases.length === 0 ? (
+                            <div className="text-center py-12 bg-white rounded-lg border border-gray-200 border-dashed">
+                                <p className="text-gray-400 mb-4">No test cases yet.</p>
+                                <Link href={`/projects/${id}/testcases/new`}>
+                                    <span className="text-[#002B5C] font-semibold hover:underline cursor-pointer">Create your first test case</span>
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="grid gap-3">
+                                {testCases.map(tc => (
+                                    <div
+                                        key={tc.id}
+                                        onClick={() => setLocation(`/testcases/${tc.id}`)}
+                                        className="bg-white p-4 rounded-lg border border-gray-100 hover:border-blue-400 hover:shadow-sm cursor-pointer transition-all flex justify-between items-center group relative"
+                                    >
+                                        <div>
+                                            <div className="font-semibold text-[#002B5C] group-hover:text-blue-600 transition-colors">
+                                                {tc.name}
                                             </div>
-                                        )}
+                                            <div className="text-sm text-gray-500 mt-1">{tc.description}</div>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="relative">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenMenuId(openMenuId === tc.id ? null : tc.id);
+                                                }}
+                                                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+                                            >
+                                                {/* Three dots icon */}
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                                </svg>
+                                            </button>
+
+                                            {/* Dropdown Menu */}
+                                            {openMenuId === tc.id && (
+                                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-10 animate-in fade-in zoom-in-95 duration-100">
+                                                    <button
+                                                        onClick={(e) => handleDeleteTestCase(e, tc.id)}
+                                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+                                ))}
+                            </div>
+                        )
+                    }
+                </div >
+            </div >
 
             {/* Add Member Modal */}
-            {showMemberModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg w-full max-w-sm shadow-xl">
-                        <h3 className="text-lg font-bold text-[#002B5C] mb-4">Add Team Member</h3>
-                        <form onSubmit={handleAddMember}>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    required
-                                    className="w-full border border-gray-300 rounded p-2"
-                                    placeholder="friend@example.com"
-                                    value={newMemberEmail}
-                                    onChange={e => setNewMemberEmail(e.target.value)}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">User must already be registered.</p>
-                            </div>
-                            <div className="flex justify-end gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowMemberModal(false)}
-                                    className="px-3 py-1 text-gray-600"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={memberLoading}
-                                    className="px-3 py-1 bg-[#002B5C] text-white rounded hover:bg-[#001f42] disabled:opacity-50"
-                                >
-                                    {memberLoading ? "Adding..." : "Add Member"}
-                                </button>
-                            </div>
-                        </form>
+            {
+                showMemberModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg w-full max-w-sm shadow-xl">
+                            <h3 className="text-lg font-bold text-[#002B5C] mb-4">Add Team Member</h3>
+                            <form onSubmit={handleAddMember}>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full border border-gray-300 rounded p-2"
+                                        placeholder="friend@example.com"
+                                        value={newMemberEmail}
+                                        onChange={e => setNewMemberEmail(e.target.value)}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">User must already be registered.</p>
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowMemberModal(false)}
+                                        className="px-3 py-1 text-gray-600"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={memberLoading}
+                                        className="px-3 py-1 bg-[#002B5C] text-white rounded hover:bg-[#001f42] disabled:opacity-50"
+                                    >
+                                        {memberLoading ? "Adding..." : "Add Member"}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </Layout >
     );
 }
