@@ -99,7 +99,7 @@ export default function ProjectDetail() {
     if (loading) return <Layout title="Loading..."><div className="text-gray-400">Loading...</div></Layout>;
     if (!project) return <Layout title="Error"><div className="text-red-400">Project not found</div></Layout>;
 
-    const isOwner = user && project.owner_id === user.id;
+    const isOwner = user && String(project.owner_id) === String(user.id);
 
     return (
         <Layout title={project.name}>
@@ -136,12 +136,12 @@ export default function ProjectDetail() {
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold border border-blue-200">
-                                        OW
+                                        {project.owner?.full_name ? project.owner.full_name.substring(0, 2).toUpperCase() : "OW"}
                                     </div>
                                     <div className="overflow-hidden">
                                         <div className="text-xs font-bold text-gray-700">Owner</div>
                                         <div className="text-xs text-gray-500 truncate w-32">
-                                            (You based on Auth)
+                                            {project.owner?.full_name || `User ${project.owner_id}`} {isOwner && "(You)"}
                                         </div>
                                     </div>
                                 </div>

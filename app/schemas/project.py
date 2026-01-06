@@ -2,6 +2,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 from datetime import datetime
 from app.schemas.metric import MetricDefinitionRead
+from app.schemas.user import UserRead
 
 class ProjectCreate(BaseModel):
     name: str
@@ -10,6 +11,8 @@ class ProjectCreate(BaseModel):
 class ProjectRead(ProjectCreate):
     id: int
     created_at: datetime
+    owner_id: Optional[int] = None
+    owner: Optional[UserRead] = None
 
 class TestCaseCreate(BaseModel):
     name: str
