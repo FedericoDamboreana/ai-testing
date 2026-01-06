@@ -122,12 +122,16 @@ You must follow these rules strictly:
 5. Metrics must be suitable for longitudinal evaluation.
 
 Metric rules:
-- Use LLM_JUDGE only for subjective qualities such as style, clarity, coherence, or reasoning quality.
-- Use DETERMINISTIC only for objective rule-based checks or counts.
+- Use LLM_JUDGE for ANY check involving meaning, semantics, tone, creativity, or complex reasoning.
+- Use DETERMINISTIC ONLY for simple, objective rule-based checks:
+  - Exact substring presence/absence.
+  - Regex pattern matching.
+  - Numeric constraints (word count, character count, sentence length).
+- If a metric requires understanding the *context* or *intent* of a word (e.g., "uses action verbs", "references specific assets"), it MUST be LLM_JUDGE.
 - Strongly prefer BOUNDED metrics with a 0–100 scale unless there is a compelling reason not to.
-- Use UNBOUNDED metrics only for counts such as violations or missing elements.
+- Use UNBOUNDED metrics only for raw counts (e.g., violations, words).
 - Every LLM_JUDGE metric must include a clear evaluation_prompt.
-- Every DETERMINISTIC metric must include a clear rule_definition.
+- Every DETERMINISTIC metric must include a clear rule_definition (regex or logic).
 
 Output rules:
 - Return a strict JSON object matching the provided schema.
